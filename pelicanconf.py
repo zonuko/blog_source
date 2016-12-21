@@ -1,18 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- #
+
 from __future__ import unicode_literals
 
 AUTHOR = 'zonuko'
 SITENAME = 'zonuko blog'
 SITEURL = ''
-
+SITESUBTITLE = "test"
 PATH = 'content'
 
 TIMEZONE = 'Asia/Tokyo'
 
-DEFAULT_LANG = 'ja'
-
-THEME = "../pelican-themes/bulrush"
+DEFAULT_LANG = 'en'
+THEME = "../bulrush"
+PLUGIN_PATHS = ['../pelican-plugins']
+PLUGINS = ['assets']
+JINJA_EXTENSIONS = ['webassets.ext.jinja2.AssetsExtension', 'jinja2.ext.with_']
 
 # Feed generation is usually not desired when developing
 FEED_ALL_ATOM = None
