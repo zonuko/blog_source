@@ -35,8 +35,9 @@ SOCIAL = (
     ('GitHub', 'https://github.com/zonuko'),
     ('Bitbucket', 'https://bitbucket.org/y_fujiwara/'),
     ('Twitter', 'https://twitter.com/nuhera'),
+    ('Twitter', 'https://twitter.com/zonuko'),
 )
-
+DISQUS_SITENAME = 'zonuko-github-io'
 DEFAULT_PAGINATION = 10
 
 # Uncomment following line if you want document-relative URLs when developing
