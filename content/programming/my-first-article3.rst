@@ -2,8 +2,7 @@ Pelican でブログ その３
 ######################################
 
 :date: 2016-12-24 00:00
-:category: math
-:tags: math, python
+:tags: programming, python
 :summary: 数式テスト
 
 これは reStructuredText 形式です。

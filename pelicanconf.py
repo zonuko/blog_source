@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 AUTHOR = 'zonuko'
 SITENAME = 'zonuko blog'
 SITEURL = 'https://zonuko.github.io'
-SITESUBTITLE = "勉強したことをまとめたりするブログ"
+SITESUBTITLE = "好きな趣味とか技術とかを書き散らす予定"
 DESCRIPTION = "test"
 PATH = 'content'
 FAVICON = 'favicon.ico'

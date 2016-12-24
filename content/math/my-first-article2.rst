@@ -3,8 +3,7 @@ Pelican でブログ その２
 
 :date: 2016-12-23 21:59
 :slug: my-first-article2
-:category: test
-:tags: python
+:tags: math
 :summary: test
 :related_posts: slug1
 
