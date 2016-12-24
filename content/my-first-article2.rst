@@ -5,6 +5,8 @@ Pelican でブログ その２
 :slug: my-first-article2
 :category: test
 :tags: python
+:summary: test
+:related_posts: slug1
 
 これは reStructuredText 形式です。その２
 

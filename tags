@@ -1,0 +1,63 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	0.0.0	/6587204/
+AUTHOR	pelicanconf.py	/^AUTHOR = 'zonuko'$/;"	kind:variable	line:6
+AUTHOR_FEED_ATOM	pelicanconf.py	/^AUTHOR_FEED_ATOM = None$/;"	kind:variable	line:31
+AUTHOR_FEED_RSS	pelicanconf.py	/^AUTHOR_FEED_RSS = None$/;"	kind:variable	line:32
+AUTHOR_SAVE_AS	pelicanconf.py	/^AUTHOR_SAVE_AS = ''$/;"	kind:variable	line:50
+AddressReuseTCPServer	fabfile.py	/^    class AddressReuseTCPServer(SocketServer.TCPServer):$/;"	kind:class	line:52
+CATEGORY_FEED_ATOM	pelicanconf.py	/^CATEGORY_FEED_ATOM = None$/;"	kind:variable	line:29
+CATEGORY_FEED_ATOM	publishconf.py	/^CATEGORY_FEED_ATOM = 'feeds\/%s.atom.xml'$/;"	kind:variable	line:17
+DEFAULT_LANG	pelicanconf.py	/^DEFAULT_LANG = 'ja'$/;"	kind:variable	line:17
+DEFAULT_PAGINATION	pelicanconf.py	/^DEFAULT_PAGINATION = 10$/;"	kind:variable	line:44
+DEPLOY_PATH	fabfile.py	/^DEPLOY_PATH = env.deploy_path$/;"	kind:variable	line:12
+DESCRIPTION	pelicanconf.py	/^DESCRIPTION = "test"$/;"	kind:variable	line:10
+DIRECT_TEMPLATES	pelicanconf.py	/^DIRECT_TEMPLATES = ('index', 'categories', 'archives', 'search', 'tipue_search')$/;"	kind:variable	line:51
+DISQUS_SITENAME	pelicanconf.py	/^DISQUS_SITENAME = 'zonuko-blog'$/;"	kind:variable	line:42
+FAVICON	pelicanconf.py	/^FAVICON = 'favicon.ico'$/;"	kind:variable	line:12
+FAVICON_TYPE	pelicanconf.py	/^FAVICON_TYPE = 'image\/vnd.microsoft.icon'$/;"	kind:variable	line:13
+FEED_ALL_ATOM	pelicanconf.py	/^FEED_ALL_ATOM = 'feeds\/all.atom.xml'$/;"	kind:variable	line:53
+FEED_ALL_ATOM	pelicanconf.py	/^FEED_ALL_ATOM = None$/;"	kind:variable	line:28
+FEED_ALL_ATOM	publishconf.py	/^FEED_ALL_ATOM = 'feeds\/all.atom.xml'$/;"	kind:variable	line:16
+JINJA_EXTENSIONS	pelicanconf.py	/^JINJA_EXTENSIONS = ['webassets.ext.jinja2.AssetsExtension', 'jinja2.ext.with_']$/;"	kind:variable	line:21
+PATH	pelicanconf.py	/^PATH = 'content'$/;"	kind:variable	line:11
+PLUGINS	pelicanconf.py	/^PLUGINS = ['assets', 'render_math', 'related_posts', 'tag_cloud']$/;"	kind:variable	line:20
+PLUGIN_PATHS	pelicanconf.py	/^PLUGIN_PATHS = ['..\/pelican-plugins']$/;"	kind:variable	line:19
+PORT	fabfile.py	/^PORT = 8000$/;"	kind:variable	line:27
+RELATED_POSTS_MAX	pelicanconf.py	/^RELATED_POSTS_MAX = 10$/;"	kind:variable	line:24
+RELATED_POSTS_SKIP_SAME_CATEGORY	pelicanconf.py	/^RELATED_POSTS_SKIP_SAME_CATEGORY = True$/;"	kind:variable	line:25
+RELATIVE_URLS	pelicanconf.py	/^RELATIVE_URLS = True$/;"	kind:variable	line:47
+RELATIVE_URLS	publishconf.py	/^RELATIVE_URLS = False$/;"	kind:variable	line:14
+SHARE	pelicanconf.py	/^SHARE = True$/;"	kind:variable	line:54
+SITENAME	pelicanconf.py	/^SITENAME = 'zonuko blog'$/;"	kind:variable	line:7
+SITESUBTITLE	pelicanconf.py	/^SITESUBTITLE = "勉強したことをまとめたりするブログ"$/;"	kind:variable	line:9
+SITEURL	pelicanconf.py	/^SITEURL = 'https:\/\/zonuko.github.io'$/;"	kind:variable	line:8
+SITEURL	publishconf.py	/^SITEURL = 'http:\/\/zonuko.github.io'$/;"	kind:variable	line:13
+SOCIAL	pelicanconf.py	/^SOCIAL = ($/;"	kind:variable	line:35
+TAG_SAVE_AS	pelicanconf.py	/^TAG_SAVE_AS = ''$/;"	kind:variable	line:49
+THEME	pelicanconf.py	/^THEME = "..\/themes\/pelican-mg"$/;"	kind:variable	line:18
+TIMEZONE	pelicanconf.py	/^TIMEZONE = 'Asia\/Tokyo'$/;"	kind:variable	line:15
+TIPUE_SEARCH_SAVE_AS	pelicanconf.py	/^TIPUE_SEARCH_SAVE_AS = 'tipue_search.json'$/;"	kind:variable	line:52
+TRANSLATION_FEED_ATOM	pelicanconf.py	/^TRANSLATION_FEED_ATOM = None$/;"	kind:variable	line:30
+TWITTER_USERNAME	pelicanconf.py	/^TWITTER_USERNAME = 'nuhera'$/;"	kind:variable	line:55
+allow_reuse_address	fabfile.py	/^        allow_reuse_address = True$/;"	kind:variable	line:53
+build	fabfile.py	/^def build():$/;"	kind:function	line:35
+cf_upload	fabfile.py	/^def cf_upload():$/;"	kind:function	line:69
+clean	fabfile.py	/^def clean():$/;"	kind:function	line:29
+dest_path	fabfile.py	/^dest_path = '\/var\/www'$/;"	kind:variable	line:16
+fabfile.py	fabfile.py	1;"	kind:file	line:1
+gh_pages	fabfile.py	/^def gh_pages():$/;"	kind:function	line:90
+pelicanconf.py	pelicanconf.py	1;"	kind:file	line:1
+preview	fabfile.py	/^def preview():$/;"	kind:function	line:65
+production	fabfile.py	/^production = 'root@localhost:22'$/;"	kind:variable	line:15
+project	fabfile.py	/^import fabric.contrib.project as project$/;"	kind:namespace	line:2
+publish	fabfile.py	/^def publish():$/;"	kind:function	line:79
+publishconf.py	publishconf.py	1;"	kind:file	line:1
+rebuild	fabfile.py	/^def rebuild():$/;"	kind:function	line:39
+regenerate	fabfile.py	/^def regenerate():$/;"	kind:function	line:44
+reserve	fabfile.py	/^def reserve():$/;"	kind:function	line:60
+serve	fabfile.py	/^def serve():$/;"	kind:function	line:48
