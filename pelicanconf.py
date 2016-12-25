@@ -13,7 +13,7 @@ PATH = 'content'
 # Favicon Settings
 FAVICON = 'favicon.ico'
 FAVICON_TYPE = 'image/vnd.microsoft.icon'
-STATIC_PATHS = ['images', 'extra']
+STATIC_PATHS = ['images', 'pdfs', 'extra']
 EXTRA_PATH_METADATA = {
     'extra/' + FAVICON: {'path': FAVICON},
 }
