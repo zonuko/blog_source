@@ -2,8 +2,7 @@ About
 #######################
 
 :date: 2016-12-25 21:59
-:slug: about
-:tags: math
+:tags: anout
 :summary: About
 
 About me
@@ -23,9 +22,44 @@ About me
 
   - 都内のIT企業に就職(2015/4 ～ 今まで)
 
-Hobby
+    - メインはC++かC#かJava
+    - たまにRubyとかJavaScript
+
+Interests
 =============
 
 - アニメ
 
   - SHOW BY ROCK!!
+
+    - 2期円盤マラソン中
+
+- Game
+
+  - STG どれも下手くそ
+
+    - レイストーム
+    - ダライアス外伝
+
+  - 格闘ゲーム
+
+    - コンボゲーと呼ばれる物
+
+- Technology
+
+  - 業務でつかった物
+  - Vim
+
+    - 修行中
+
+  - Python
+  - Elixir
+  - Haskell,Rust
+
+    - 勉強中・・・
+  
+  - Elm
+  - 線形代数
+  - プログラミング言語作成
+
+    - 将来的に・・・
