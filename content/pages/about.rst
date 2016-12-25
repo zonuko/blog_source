@@ -45,6 +45,10 @@ Interests
 
     - コンボゲーと呼ばれる物
 
+- Music
+
+  - ゲームサントラ集め
+
 - Technology
 
   - 業務でつかった物

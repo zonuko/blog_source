@@ -8,7 +8,7 @@ SITENAME = 'ぞぬこBLOG'
 SITEURL = 'https://zonuko.github.io'
 SITESUBTITLE = "黒魔術師になりたいブログ"
 DESCRIPTION = "好きな趣味とか技術とかを書き散らすブログ"
-PATH = 'content'
+PATH = 'content/categorys'
 
 # Favicon Settings
 FAVICON = 'favicon.ico'
@@ -29,8 +29,12 @@ DATE_FORMATS = {
 DEFAULT_LANG = 'ja'
 THEME = "../themes/pelican-mg"
 PLUGIN_PATHS = ['../pelican-plugins']
-PLUGINS = ['assets', 'render_math', 'related_posts', 'tag_cloud', 'tipue_search']
+PLUGINS = ['assets', 'render_math', 'related_posts', 'tag_cloud', 'tipue_search', 'sitemap']
 JINJA_EXTENSIONS = ['webassets.ext.jinja2.AssetsExtension', 'jinja2.ext.with_']
+
+SITEMAP = {
+    'format': 'xml'
+}
 
 # Plugins setting
 RELATED_POSTS_MAX = 10
@@ -65,4 +69,7 @@ FEED_ALL_ATOM = 'feeds/all.atom.xml'
 SHARE = True
 TWITTER_USERNAME = 'nuhera'
 
-
+# 色々パスの設定
+ARTICLE_URL = 'posts/{date:%Y}/{date:%m}/{date:%d}/{slug}/'
+ARTICLE_SAVE_AS = 'posts/{date:%Y}/{date:%m}/{date:%d}/{slug}/index.html'
+FILENAME_METADATA = r'(?P<date>\d{4}-\d{2}-\d{2})_(?P<slug>.*)'
