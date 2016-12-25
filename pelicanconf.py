@@ -4,13 +4,21 @@
 from __future__ import unicode_literals
 
 AUTHOR = 'zonuko'
-SITENAME = 'zonuko blog'
+SITENAME = 'ぞぬこBLOG'
 SITEURL = 'https://zonuko.github.io'
-SITESUBTITLE = "好きな趣味とか技術とかを書き散らす"
-DESCRIPTION = "好きな趣味とか技術とかを書き散らす"
+SITESUBTITLE = "黒魔術師になりたいブログ"
+DESCRIPTION = "好きな趣味とか技術とかを書き散らすブログ"
 PATH = 'content'
+
+# Favicon Settings
 FAVICON = 'favicon.ico'
 FAVICON_TYPE = 'image/vnd.microsoft.icon'
+STATIC_PATHS = ['images', 'extra']
+EXTRA_PATH_METADATA = {
+    'extra/' + FAVICON: {'path': FAVICON},
+}
+
+GOOGLE_ANALYTICS = 'UA-89443473-1'
 
 TIMEZONE = 'Asia/Tokyo'
 DATE_FORMATS = {
@@ -56,3 +64,5 @@ DIRECT_TEMPLATES = ('index', 'categories', 'archives', 'search', 'tipue_search')
 FEED_ALL_ATOM = 'feeds/all.atom.xml'
 SHARE = True
 TWITTER_USERNAME = 'nuhera'
+
+
