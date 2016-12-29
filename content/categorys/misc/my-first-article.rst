@@ -59,7 +59,7 @@ Pelicanについて
 
 - エディタの類
 
-  - Visual Studio Code 
+  - Visual Studio Code
   - Vim
 
 ===================

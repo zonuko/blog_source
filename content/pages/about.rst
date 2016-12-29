@@ -61,7 +61,7 @@ Interests
   - Haskell,Rust
 
     - 勉強中・・・
-  
+
   - Elm
   - 線形代数
   - プログラミング言語作成

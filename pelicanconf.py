@@ -29,7 +29,7 @@ DATE_FORMATS = {
 DEFAULT_LANG = 'ja'
 THEME = "../themes/pelican-mg"
 PLUGIN_PATHS = ['../pelican-plugins']
-PLUGINS = ['assets', 'render_math', 'related_posts', 'tag_cloud', 'tipue_search', 'sitemap']
+PLUGINS = ['assets', 'better_codeblock_line_numbering', 'render_math', 'related_posts', 'tag_cloud', 'tipue_search', 'sitemap']
 JINJA_EXTENSIONS = ['webassets.ext.jinja2.AssetsExtension', 'jinja2.ext.with_']
 
 SITEMAP = {
