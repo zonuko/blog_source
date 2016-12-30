@@ -3,6 +3,7 @@ Programming Phoenix勉強その1
 
 :date: 2016-12-28 21:50
 :tags: Elixir,Phoenix
+:slug: programming-phoenix1
 :summary: Programming Phoenixって本を読むその1
 
 | 買ってあったけど読んでなかったので読みます.
