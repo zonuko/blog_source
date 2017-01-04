@@ -1,10 +1,10 @@
 Programming Phoenix勉強その3
 ################################
 
-:date: 2017-01-01 00:50
+:date: 2017-01-04 16:08
 :tags: Elixir,Phoenix
 :slug: programming-phoenix3
-:related_posts: programming-phoenix3
+:related_posts: programming-phoenix2
 :summary: Programming Phoenixって本を読むその3
 
 | その3です。
@@ -221,6 +221,41 @@ Templateの実装
 | ``EEx`` のハイライトないので　 ``ERB`` でハイライトしてます.
 |
 
+=========================================
+Viewのuse Rumbl.Web, :viewについて
+=========================================
+
+| ``view`` に記述した ``use Rumbl.Web, :view`` の実体は ``web/web.ex`` に存在します.
+|
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.Web do
+    …
+    def view do
+      quote do
+        use Phoenix.View, root: "web/templates"
+  
+        # Import convenience functions from controllers
+        import Phoenix.Controller, only: [get_csrf_token: 0, get_flash: 2, view_module: 1]
+  
+        # Use all HTML functionality (forms, tags, etc)
+        use Phoenix.HTML
+  
+        import Rumbl.Router.Helpers
+        import Rumbl.ErrorHelpers
+        import Rumbl.Gettext
+      end
+    end
+    …
+  end
+
+| ``Phoenix.HTML`` をHTML周りのことを色々やってくれているようです.
+| また,これによって生成されるHTMLは安全で,XSS対策なども行ってくれているようです.
+| ここには勝手に関数を書くのはNG.書きたいなら真似して ``import`` を使うこと.
+|
+  
 ====================
 まとめ
 ====================
