@@ -175,5 +175,57 @@ Controllerの実装
 Viewの実装
 ====================
 
-| ``View`` を以下の内容で実装します.
+| ``web/views/user_view.ex`` を以下の内容で実装します.
 | 
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.UserView do
+    use Rumbl.Web, :view
+    alias Rumbl.User
+  
+    def first_name(%User{name: name}) do
+      name
+      |> String.split(" ")
+      |> Enum.at(0)
+    end
+  end
+
+| 単純に名前を名字と名前で分解しているだけの関数です.
+|
+
+====================
+Templateの実装
+====================
+
+| ``web/templates/user/index.html.eex`` を以下の内容で実装します.
+| 
+
+.. code-block:: ERB
+  :linenos:
+
+  <h1>Listing Users</h1>
+  
+  <table class="table">
+    <%= for user <- @users do %>
+      <tr>
+        <td><b><%= first_name(user) %></b> (<%= user.id %>)</td>
+        <td>><%= link "View", to: user_path(@conn, :show, user.id) %></td>
+      </tr>
+    <% end %>
+  </table>
+
+| これも特に説明することは無いと思います.
+| ここまでくれば ``http://localhost:4000/users`` でユーザ一覧が表示されます.
+| ``EEx`` のハイライトないので　 ``ERB`` でハイライトしてます.
+|
+
+====================
+まとめ
+====================
+
+| 今回は前回より具体的に各機能を実装しました.
+| 個人的には今までよくわからなかった ``Repository`` と ``Model`` の関係がちょっとわかったのが収穫でした.
+| 他のフレームワーク触ってると, ``View`` と ``Template`` が分離しているのが一瞬戸惑いそうだとおもいました.
+|
