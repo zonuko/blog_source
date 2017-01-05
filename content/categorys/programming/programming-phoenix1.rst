@@ -6,7 +6,7 @@ Programming Phoenix勉強その1
 :slug: programming-phoenix1
 :summary: Programming Phoenixって本を読むその1
 
-| 買ってあったけど読んでなかったので読みます.
+| 買ってあったけど読んでなかったので読みます.プログラミングElixirは原著の方も翻訳の方も一応読んでます.
 | プログラミングElixirについては色々なところで書評なり見る気がするけど,こっちの方は余り見ない気がします.
 |
 | ちなみに実際にコードを書くPart1のChapter2からやってきます.
