@@ -85,4 +85,42 @@ modelの実装
     end
   end
 
+=========================
+DBのマイグレーション
+=========================
+
+| DB側にもテーブルとかを作る必要があるので以下のコマンドを実行します。
+|
+
+.. code-block:: shell
+  :linenos:
+
+  rumbl $ mix ecto.gen.migration create_user
+  * creating priv/repo/migrations
+  * creating priv/repo/migrations/20170108070642_create_user.exs
+
+| 生成された ``priv/repo/migrations/{日付}_create_user.exs`` ファイルを以下のように変更します。
+| これもRailsやったことあれば説明不要だと思います。
+|
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.Repo.Migrations.CreateUser do
+    use Ecto.Migration
+  
+    def change do
+      create table(:users) do
+        add :name, :string
+        add :username, :string, null: false
+        add :password_hash, :string
+  
+        timestamps()
+      end
+  
+      create unique_index(:users, [:username])
+    end
+  end
+
+| ``mix ecto.migrate`` でマイグレーションを実行します。
 |
