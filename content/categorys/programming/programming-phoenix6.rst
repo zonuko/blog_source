@@ -62,3 +62,64 @@ Programming Phoenix勉強その6
 
 | ``:new`` に対応するテンプレートを適当に作ります。
 |
+
+.. code-block:: ERB
+  :linenos:
+
+  <h1>New User</h1>
+  
+  <%= form_for @changeset, user_path(@conn, :create), fn f -> %>
+    <div class="form-group">
+      <%= text_input f, :name, placeholder: "Name", class: "form-control" %>
+    </div>
+    <div class="form-group">
+      <%= text_input f, :username, placeholder: "Username", class: "form-control" %>
+    </div>
+    <div class="form-group">
+      <%= password_input f, :password, placeholder: "Password", class: "form-control" %>
+    </div>
+    <%= submit "Create User", class: "btn, btn-primary" %>
+  <% end %>
+
+| ここまでやって起動したところ、何やらWarningが出たので解消します。
+|
+
+.. code-block:: shell
+  :linenos:
+
+  warning: `Ecto.Changeset.cast/4` is deprecated, please use `cast/3` + `validate_required/3` instead
+      (rumbl) web/models/user.ex:15: Rumbl.User.changeset/2
+      (rumbl) web/controllers/user_controller.ex:16: Rumbl.UserController.new/2
+      (rumbl) web/controllers/user_controller.ex:1: Rumbl.UserController.action/2
+      (rumbl) web/controllers/user_controller.ex:1: Rumbl.UserController.phoenix_controller_pipeline/2
+  
+  warning: passing :empty to Ecto.Changeset.cast/3 is deprecated, please pass an empty map or :invalid instead
+      (rumbl) web/models/user.ex:15: Rumbl.User.changeset/2
+      (rumbl) web/controllers/user_controller.ex:16: Rumbl.UserController.new/2
+      (rumbl) web/controllers/user_controller.ex:1: Rumbl.UserController.action/2
+      (rumbl) web/controllers/user_controller.ex:1: Rumbl.UserController.phoenix_controller_pipeline/2
+  
+=========================
+Warningの解消
+=========================
+
+| 2つWarningが出てました。1つは ``user.ex`` の ``changeset/2`` 関数のデフォルト引数で ``:empty`` としていた部分です。
+| その部分を以下のように変えます。
+|
+
+.. code-block:: Elixir
+  :linenos:
+
+  def changeset(model, params \\ %{}) do
+
+| 単純に空の ``Map`` にしただけですね。
+| もう1つ ``cast/4`` 関数を呼び出している部分でもWarningが出ているので修正します。
+|
+
+.. code-block:: Elixir
+  :linenos:
+  model
+  |> cast(params, ~w(name username))
+  |> validate_length(:username, min: 1, max: 20)
+
+|
