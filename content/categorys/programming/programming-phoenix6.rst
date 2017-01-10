@@ -103,7 +103,7 @@ Programming Phoenix勉強その6
 Warningの解消
 =========================
 
-| 2つWarningが出てました。1つは ``user.ex`` の ``changeset/2`` 関数のデフォルト引数で ``:empty`` としていた部分です。
+| ``Ecto`` とかのバージョの違いのせいか2つWarningが出てました。1つは ``user.ex`` の ``changeset/2`` 関数のデフォルト引数で ``:empty`` としていた部分です。
 | その部分を以下のように変えます。
 |
 
@@ -118,8 +118,35 @@ Warningの解消
 
 .. code-block:: Elixir
   :linenos:
+
   model
-  |> cast(params, ~w(name username))
+  |> cast(params, [:name, :username])
+  |> validate_required([:name, :username])
   |> validate_length(:username, min: 1, max: 20)
 
+| `ここ <http://www.phoenixframework.org/docs/ecto-models>`_ とか `ここらへん <https://hexdocs.pm/ecto/Ecto.Changeset.html#cast/4>`_ 参考にしましたが英語力の無さ故にあってるかわからないです。誰か教えて!!
+| パラメータの名前的にはあってそうですが・・・
+| 
+
+=========================
+Createアクションの実装
+=========================
+
+| ``new`` アクションを実装したので実際にDBにインサートする ``create`` アクションを実装します。
 |
+
+.. code-block:: Elixir
+  :linenos:
+
+  def create(conn, %{"user" => user_params}) do
+    changeset = User.changeset(%User{}, user_params)
+    {:ok, user} = Repo.insert(changeset)
+
+    conn
+    |> put_flash(:info, "#{user.name} created!")
+    |> redirect(to: user_path(conn, :index))
+  end
+
+| あんまり説明することはないですが、 ``conn`` からのパイプラインで作成後の ``template`` 用の処理を読んでる点くらいでしょうか。パイプラインが最大の特徴かもしれませんが・・・
+|
+
