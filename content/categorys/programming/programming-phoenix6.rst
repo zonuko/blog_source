@@ -126,7 +126,8 @@ Warningの解消
 
 | `ここ <http://www.phoenixframework.org/docs/ecto-models>`_ とか `ここらへん <https://hexdocs.pm/ecto/Ecto.Changeset.html#cast/4>`_ 参考にしましたが英語力の無さ故にあってるかわからないです。誰か教えて!!
 | パラメータの名前的にはあってそうですが・・・
-| 
+| また、これを見ると ``cast`` が ``changeset`` を返してきて、それに対してバリデーションを掛けているのがわかります。
+|
 
 =========================
 Createアクションの実装
@@ -140,13 +141,89 @@ Createアクションの実装
 
   def create(conn, %{"user" => user_params}) do
     changeset = User.changeset(%User{}, user_params)
-    {:ok, user} = Repo.insert(changeset)
-
-    conn
-    |> put_flash(:info, "#{user.name} created!")
-    |> redirect(to: user_path(conn, :index))
+    case Repo.insert(changeset) do
+      {:ok, user} ->
+        conn
+        |> put_flash(:info, "#{user.name} created!")
+        |> redirect(to: user_path(conn, :index))
+      {:error, changeset} ->
+        render(conn, "new.html", changeset: changeset)
+    end
   end
 
 | あんまり説明することはないですが、 ``conn`` からのパイプラインで作成後の ``template`` 用の処理を読んでる点くらいでしょうか。パイプラインが最大の特徴かもしれませんが・・・
+| また、 ``new.html.eex`` もエラーを表示するように変えます。
 |
 
+.. code-block:: ERB
+  :linenos:
+
+  <h1>New User</h1>
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
+  
+  <%= form_for @changeset, user_path(@conn, :create), fn f -> %>
+    <div class="form-group">
+      <%= text_input f, :name, placeholder: "Name", class: "form-control" %>
+      <%= error_tag f, :name %>
+    </div>
+    <div class="form-group">
+      <%= text_input f, :username, placeholder: "Username", class: "form-control" %>
+      <%= error_tag f, :username %>
+    </div>
+    <div class="form-group">
+      <%= password_input f, :password, placeholder: "Password", class: "form-control" %>
+      <%= error_tag f, :password %>
+    </div>
+    <%= submit "Create User", class: "btn, btn-primary" %>
+  <% end %>
+
+| ``error_tag/2`` 関数は ``view`` の ``error_helpers.ex`` に定義されている関数です。
+|
+
+=========================
+Changesetについて
+=========================
+
+| このchapterの最後に ``changeset`` について触れられています。
+|
+
+.. code-block:: shell
+  :linenos:
+
+  iex(1)> changeset = Rumbl.User.changeset(%Rumbl.User{username: "eric"})
+  #Ecto.Changeset<action: nil, changes: %{},
+   errors: [name: {"can't be blank", [validation: :required]}],
+   data: #Rumbl.User<>, valid?: false>
+  iex(2)> changeset
+  #Ecto.Changeset<action: nil, changes: %{},
+   errors: [name: {"can't be blank", [validation: :required]}],
+   data: #Rumbl.User<>, valid?: false>
+  iex(3)> import Ecto.Changeset
+  Ecto.Changeset
+  iex(4)> changeset.changes
+  %{}
+  iex(5)> changeset = put_change(changeset, :username, "ericmj")
+  #Ecto.Changeset<action: nil, changes: %{username: "ericmj"},
+   errors: [name: {"can't be blank", [validation: :required]}],
+   data: #Rumbl.User<>, valid?: false>
+  iex(6)> changeset.changes
+  %{username: "ericmj"}
+  iex(7)> get_change(changeset, :username)
+  "ericmj"
+
+| これを見ると ``changeset`` はバリデーション以外にも変更をの追跡と保持を行っていることがわかります。
+|
+
+=========================
+まとめ
+=========================
+
+| 簡単なDB操作を行いました。今回はテンプレート周りはおまけだったように思います。
+| 何かしらフレームワーク触ったことあればそんなに違和感はなく使えると思います。
+| ずっと ``changeset`` が謎だったんですが、少し理解できたと思います。
+| 基本的なところは結構網羅されてきたんじゃないかと思いますのでサクサク行きたいです。
+|
