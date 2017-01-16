@@ -18,7 +18,6 @@ Programming Phoenix勉強その7
 | まずはパスワードのハッシュ化を行います。必要なライブラリをインストールするために ``mix.exs`` に以下のように追記をお行います。
 | 
 
-
 .. code-block:: Elixir
   :linenos:
 
@@ -76,28 +75,28 @@ Programming Phoenix勉強その7
 
 | ``Ecto`` の最新版を使っているので書籍と若干異なっています。新しい方の ``Ecto`` では ``cast/4`` は推奨されなくなっているようです。
 | なので、 `Phoenixのガイド <http://www.phoenixframework.org/docs/ecto-models>`_ とか、 `Ectoのドキュメント <https://hexdocs.pm/ecto/Ecto.Changeset.html>`_ とかを見て適当に修正してます。（このやり方でいいか不安ですが・・・）
-| また、 ``:empty`` もWarningになるので、空の構造体に変えています。
+| また、 ``:empty`` もWarningになるので、空のハッシュに変えています。
+| ついでに ``create`` アクションで ``User.changeset`` の部分を ``User.registration_changeset`` に変更します。
 | ここまでやってMacだとOKでしたが、Windowsだとエラーになりました。
 |
 
 ==================================
-Windowsでのエラー（Comeonin）
+Windowsでのエラー（comeonin）
 ==================================
 
 | Windowsから ``comeonin`` を使おうとするとコンパイルを促すエラーが出るので `ここ <https://github.com/riverrun/comeonin/wiki/Requirements>`_ を参考にコンパイルします。
 | ちなみにVisualStudioインストールしてあったので最下部付近にあるVSインストール済みの場合の方法を取っています。
 
-- VSに付属している開発者コマンドプロンプトを起動します。
-- 開発者コマンドプロンプト上で以下のコマンドを実行しておきます。
+#. VSに付属している開発者コマンドプロンプトを起動します。
+#. 開発者コマンドプロンプト上で以下のコマンドを実行しておきます。
 
 .. code-block:: shell
   :linenos:
 
   > vcvarsall.bat amd64
 
-- ``vcvarsall.bat`` にパスが通ってない場合は、適当にフルパスで指定すればいいと思います。これを行わなくてもコンパイル自体は出来ますが、実行時にエラーになりました。
-  （ ``vcvarsall.bat`` については `ここ <https://msdn.microsoft.com/ja-jp/library/x4d2c09s.aspx>`_ ）
-- 本プロジェクト（ ``rumbl`` ）のディレクトリまで移動して以下のコマンドを実行します。
+#. ``vcvarsall.bat`` にパスが通ってない場合は、適当にフルパスで指定すればいいと思います。これを行わなくてもコンパイル自体は出来ますが、実行時にエラーになりました。（ ``vcvarsall.bat`` については `MSDN <https://msdn.microsoft.com/ja-jp/library/x4d2c09s.aspx>`_ ）
+#. 本プロジェクト（ ``rumbl`` ）のディレクトリまで移動して以下のコマンドを実行します。
 
 .. code-block:: shell
   :linenos:
@@ -105,3 +104,39 @@ Windowsでのエラー（Comeonin）
   rumbl > mix deps.compile
 
 | 自分の環境ではこれでうまくいきました。
+|
+
+==================================
+Plugについて
+==================================
+
+| ``Plug`` を使ってログイン機能を作る前に ``Plug`` についてちょっと掘ります。
+
+- ``Plug`` にはモジュールプラグと関数プラグの二種類が存在する。
+- モジュールプラグは名前の通り幾つかの関数を集めたモジュールのプラグ
+- 関数プラグは関数名をアトムとして指定したプラグ
+
+| ログイン機能としてモジュールプラグを作成します。
+|
+
+モジュールプラグ
+==================================
+
+| モジュールプラグとして設定するモジュールには ``init/1`` 関数と ``call/2`` 関数が必要とされます。
+| 以下は何もしないモジュールプラグの例です。
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule NothingPlug do
+    def init(opts) do
+      opts
+    end
+
+    def call(conn, _opts) do
+      conn
+    end
+  end
+
+| ``call`` 関数の引数を見るとわかりますが、モジュールプラグは ``conn`` を変換するようです。
+|
