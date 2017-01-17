@@ -140,3 +140,111 @@ Plugについて
 
 | ``call`` 関数の引数を見るとわかりますが、モジュールプラグは ``conn`` を変換するようです。
 |
+
+Plug.Connについて(conn)
+==================================
+
+| ``Plug.Conn`` が持つフィールドについて見てみます。
+| 書籍の方には色々書いてありますが割愛します。 `Plug.Connの公式ドキュメント <https://hexdocs.pm/plug/Plug.Conn.html>`_ を参照して下さい。ここではリクエストフィールドが持つものだけを見てみます。
+|
+
+- ``host``
+    リクエストのホスト名 ex) www.pragprog.com
+
+- ``method``
+    リクエストのWebメソッド（GETとかPOSTとか）
+
+- ``path_info``
+    パスを分割したリスト
+
+- ``req_headers``
+    リクエストヘッダ
+
+- ``scheme``
+    プロトコル（httpとか）
+
+| Webのリクエスト周りに関係するものが存在していることがわかります。
+|
+
+認証プラグの実装
+=======================
+
+| やっと認証用のプラグを実装します。
+| ``controllers/auth.ex`` を以下の内容で実装します。
+|
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.Auth do
+    import Plug.Conn
+  
+    def init(opts) do
+      # キーワードリストから:repoの箇所の値を取得する
+      # 無ければexception(つまりは必須)
+      Keyword.fetch!(opts, :repo)
+    end
+  
+    def call(conn, repo) do
+      user_id = get_session(conn, :user_id)
+      user = user_id && repo.get(Rumbl.User, user_id)
+      # assignでconnを変更する(importされた関数)
+      # これによって:current_userがコントローラやビューで使えるようになる
+      assign(conn, :current_user, user)
+    end
+  end
+
+| コメント通りなので余り言うことはないです。
+| ``init`` で ``repo`` を取得してそれが ``conn`` の第二引数に渡されるようです。セッションにあるユーザIDからユーザを取得しています。
+| パイプラインの流れの一部として処理してほしいので ``router.ex`` を以下のように変更します。
+| 
+
+.. code-block:: Elixir
+  :linenos:
+
+  pipeline :browser do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_flash
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+    plug Rumbl.Auth, repo: Rumbl.Repo # 追加
+  end
+
+ログインの実装
+=======================
+
+| ``Plug`` は出来たのでログイン処理を作ります。ログインしない限りは ``:index`` アクションと ``:show`` アクションにアクセス出来ないようにします。
+| ``user_controller.ex`` を以下のように変更します。
+|
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.UserController do
+    ...
+    def index(conn, _params) do
+      case authenticate(conn) do
+        %Plug.Conn{halted: true} = conn ->
+          conn
+        conn ->
+          users = Repo.all(Rumbl.User)
+          render conn, "index.html", users: users
+      end
+    end
+    ...
+    defp authenticate(conn) do
+      # Plugで追加したassignの呼び出しが可能かどうか
+      if conn.assigns.current_user do
+        conn
+      else
+        conn
+        |> put_flash(:error, "You must be logged in to access that page")
+        |> redirect(to: page_path(conn, :index))
+        |> halt()
+      end
+    end
+  end
+
+| 先程の ``Plug`` で変更した値を ``authenticate/1`` 関数で使っています。また、 ``:index`` アクションのアクセス時に ``authenticate`` 関数で認証済みかチェック掛けています。
+|
