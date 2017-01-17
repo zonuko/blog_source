@@ -15,7 +15,7 @@ Programming Phoenix勉強その7
 パスワードのハッシュ化
 ==================================
 
-| まずはパスワードのハッシュ化を行います。必要なライブラリをインストールするために ``mix.exs`` に以下のように追記をお行います。
+| まずはパスワードのハッシュ化を行います。必要なライブラリをインストールするために ``mix.exs`` に以下のように追記を行います。
 | 
 
 .. code-block:: Elixir
@@ -211,10 +211,10 @@ Plug.Connについて(conn)
     plug Rumbl.Auth, repo: Rumbl.Repo # 追加
   end
 
-ログインの実装
+アクセス制限の実装
 =======================
 
-| ``Plug`` は出来たのでログイン処理を作ります。ログインしない限りは ``:index`` アクションと ``:show`` アクションにアクセス出来ないようにします。
+| ``Plug`` は出来たのでアクセス制限とログインを作ります。ログインしない限りは ``:index`` アクションと ``:show`` アクションにアクセス出来ないようにします。
 | ``user_controller.ex`` を以下のように変更します。
 |
 
@@ -225,6 +225,7 @@ Plug.Connについて(conn)
     ...
     def index(conn, _params) do
       case authenticate(conn) do
+        # 構造体connのhaltedメンバのパターンマッチによる振り分け
         %Plug.Conn{halted: true} = conn ->
           conn
         conn ->
@@ -248,3 +249,40 @@ Plug.Connについて(conn)
 
 | 先程の ``Plug`` で変更した値を ``authenticate/1`` 関数で使っています。また、 ``:index`` アクションのアクセス時に ``authenticate`` 関数で認証済みかチェック掛けています。
 |
+
+``authenticate`` の関数プラグ化
+======================================
+
+| ``user_controller.ex`` の ``Rumbl.Web`` の直下のあたりに以下を追加します。
+|
+
+.. code-block:: Elixir
+  :linenos:
+
+  plug :authenticate when action in [:index, :show]
+
+| また、 ``index`` アクションを ``case`` 文を使う以前のものに戻しておきます。 ``authenticate`` 関数も以下のように2引数にしておきます。
+|
+
+.. code-block:: Elixir
+  :linenos:
+
+  defp authenticate(conn, _opts) do
+    # Plugで追加したassignの呼び出しが可能かどうか
+    if conn.assigns.current_user do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You must be logged in to access that page")
+      |> redirect(to: page_path(conn, :index))
+      |> halt()
+    end
+  end
+
+| ``_opts`` を追加しただけです。関数 ``Plug`` 化したためです。 ``Plug`` をマクロ展開したときの例が出てますが割愛します。
+|
+
+ログインの実装
+======================================
+
+
