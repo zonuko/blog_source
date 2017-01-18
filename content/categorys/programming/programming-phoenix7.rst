@@ -325,4 +325,135 @@ Plug.Connについて(conn)
 ======================================
 
 | ここまででログインするための素材は揃ったので、ログイン/ログアウト画面を作ります。今まで作ったものの合わせ技なので一気に行きます。
+| ``session_controller.ex`` を実装します。
 |
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.SessionController do
+    use Rumbl.Web, :controller
+  
+    def new(conn, _) do
+      render conn, "new.html"
+    end
+  
+    def create(conn, %{"session" => %{"username" => user, "password" => pass}}) do
+      case Rumbl.Auth.login_by_username_add_pass(conn, user, pass, repo: Repo) do
+        {:ok, conn} ->
+          conn
+          |> put_flash(:info, "Welcome back!")
+          |> redirect(to: page_path(conn, :index))
+        {:error, _reason, conn} ->
+          conn
+          |> put_flash(:error, "Invalid username/password combination")
+          |> render("new.html")
+      end
+    end
+    
+    def delete(conn, _) do
+      conn
+      |> Rumbl.Auth.logout()
+      |> redirect(to: page_path(conn, :index))
+    end
+  end
+
+| ``session_view.ex`` も作っておきます。内容は割愛します。関数などは定義しなくて良いです。
+| ``router.ex`` も上で作った ``session_controller.ex`` 用に追加しておきます。
+|
+
+.. code-block:: Elixir
+  :linenos:
+
+  scope "/", Rumbl do
+    pipe_through :browser # Use the default browser stacks.
+
+    get "/", PageController, :index
+    resources "/users", UserController, only: [:index, :show, :new, :create]
+    resources "/sessions", SessionController, only: [:new, :create, :delete] # 追加
+  end
+
+| usernameとpasswordでログインするための関数とログアウト用の関数を ``auth.ex`` に用意しておきます。
+|
+
+.. code-block:: Elixir
+  :linenos:
+
+  ...
+  import Comeonin.Bcrypt, only: [checkpw: 2, dummy_checkpw: 0]
+
+  ...
+  def logout(conn) do
+    configure_session(conn, drop: true)
+  end
+
+  def login_by_username_add_pass(conn, username, given_pass, opts) do
+    repo = Keyword.fetch!(opts, :repo)
+    user = repo.get_by(Rumbl.User, username: username)
+
+    # 複数の値で分岐しているためcaseではなくcond(caseは与えられた1つの値に対する分岐)
+    cond do
+      user && checkpw(given_pass, user.password_hash) ->
+        {:ok, login(conn, user)}
+      user ->
+        {:error, :unauthorized, conn}
+      true ->
+        dummy_checkpw()
+        {:error, :not_found, conn}
+    end
+  end
+
+| ログイン画面用のテンプレートも作ります。まず ``session/new.html.eex`` を以下のように実装します。
+|
+
+.. code-block:: ERB
+  :linenos:
+
+  <h1>Login</h1>
+  
+  <%= form_for @conn, session_path(@conn, :create), [as: :session], fn f-> %>
+    <div class="form-group">
+      <%= text_input f, :username, placeholder: "Username", class: "form-control" %>
+    </div>
+  
+    <div class="form-group">
+      <%= password_input f, :password, placeholder: "Password", class: "form-control" %>
+    </div>
+    <%= submit "Log in", class: "btn btn-primary" %>
+  <% end %>
+
+| 最後に今まで作ったもののリンクを表示します。 ``layout/app.html.eex`` を以下のように変更します。
+|
+
+.. code-block:: ERB
+  :linenos:
+
+  <header class="header">
+    <ol class="breadcrumb text-right">
+      <!-- assignsで突っ込んだものが使えている -->
+      <%= if @current_user do %>
+        <li><%= @current_user.username %></li>
+        <li>
+          <%= link "Log out", to: session_path(@conn, :delete, @current_user),
+                              method: "delete" %>
+        </li>
+      <% else %>
+        <li><%= link "Register", to: user_path(@conn, :new) %></li>
+        <li><%= link "Log in", to: session_path(@conn, :new) %></li>
+      <% end %>
+    </ol>
+    <span class="logo"></span>
+  </header>
+
+| これでOKなはずです。
+|
+
+==================================
+まとめ
+==================================
+
+- ``Plug.Conn`` を使ったセッションやコネクションの管理はスマートだし中身が分かればわかりやすいと思いました。関数の引数に毎回 ``conn`` が出てきちゃいますが・・・
+- 本のおかげかもしれませんが余りブラックボックスな部分を残さないよう理解出来ている感があるのが良いです。
+- 関数型だけあってかロジックを関数毎に分離しているのがとても良かったです。書いてて理解し易い気がします。
+
+1記事がやたらと長くなりましたが実験ということで・・・
