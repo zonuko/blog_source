@@ -1,7 +1,7 @@
 Programming Phoenix勉強その8
 ################################
 
-:date: 2017-01-22 00:00
+:date: 2017-01-21 22:21
 :tags: Elixir,Phoenix
 :slug: programming-phoenix8
 :related_posts: programming-phoenix7
@@ -163,3 +163,101 @@ Ectoについて
 | こんな感じにしてやると ``video_controller.ex`` の全アクションは上記の第三引数の引数を取るようにカスタマイズされてくれます。
 | なのでアクションを書き換えます。
 |
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.VideoController do
+    use Rumbl.Web, :controller
+  
+    alias Rumbl.Video
+  
+    # カスタムアクションで各アクションをカスタマイズする
+    def action(conn, _) do
+      # 第一引数のモジュールの第二引数の関数に第三引数の引数を渡して実行する
+      apply(__MODULE__, action_name(conn), [conn, conn.params, conn.assigns.current_user])
+    end
+  
+    def index(conn, _params, user) do
+      videos = Repo.all(user_videos(user))
+      render(conn, "index.html", videos: videos)
+    end
+  
+    def new(conn, _params, user) do
+      changeset = 
+        user
+        |> build_assoc(:videos) # current_userに関連するVideo構造体を作成
+        |> Video.changeset() # 上記Video構造体からchangeset作成中身は空
+  
+      render(conn, "new.html", changeset: changeset)
+    end
+  
+    def create(conn, %{"video" => video_params}, user) do
+      changeset = 
+        user
+        |> build_assoc(:videos) # current_userに関連するVideo構造体を作成
+        |> Video.changeset(video_params) # 上記Video構造体からchangeset作成
+  
+      case Repo.insert(changeset) do
+        {:ok, _video} ->
+          conn
+          |> put_flash(:info, "Video created successfully.")
+          |> redirect(to: video_path(conn, :index))
+        {:error, changeset} ->
+          render(conn, "new.html", changeset: changeset)
+      end
+    end
+  
+    def show(conn, %{"id" => id}, user, user) do
+      video = Repo.get!(user_videos(user), id)
+      render(conn, "show.html", video: video)
+    end
+  
+    def edit(conn, %{"id" => id}, user) do
+      video = Repo.get!(user_videos(user), id)
+      changeset = Video.changeset(video)
+      render(conn, "edit.html", video: video, changeset: changeset)
+    end
+  
+    def update(conn, %{"id" => id, "video" => video_params}, user) do
+      video = Repo.get!(user_videos(user), id)
+      changeset = Video.changeset(video, video_params)
+  
+      case Repo.update(changeset) do
+        {:ok, video} ->
+          conn
+          |> put_flash(:info, "Video updated successfully.")
+          |> redirect(to: video_path(conn, :show, video))
+        {:error, changeset} ->
+          render(conn, "edit.html", video: video, changeset: changeset)
+      end
+    end
+  
+    def delete(conn, %{"id" => id}, user) do
+      video = Repo.get!(user_videos(user), id)
+  
+      # Here we use delete! (with a bang) because we expect
+      # it to always work (and if it does not, it will raise).
+      Repo.delete!(video)
+  
+      conn
+      |> put_flash(:info, "Video deleted successfully.")
+      |> redirect(to: video_path(conn, :index))
+    end
+  
+    defp user_videos(user) do
+      assoc(user, :videos)
+    end
+  end
+
+| ``current_user`` を取り出して使っていたのをカスタムアクションによって引数で取ることができるようになりました。
+| ``show`` アクションなどではユーザに関係のある一覧が欲しいので ``user_videos/1`` 関数を用意してあります。
+| これで ``Video`` 周りの実装は一旦修了です。
+|
+
+==================================
+まとめ
+==================================
+
+- ``assoc`` で対象に関係のあるデータが取得できる。
+- コードジェネレータやルーティングについては他の言語とほとんど変わりがない
