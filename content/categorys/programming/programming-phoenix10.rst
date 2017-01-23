@@ -168,3 +168,67 @@ QueryのAPIについて
   'Comedy') []
   []
   iex(12)>
+
+============================
+各制約について
+============================
+
+現状のアプリケーションはマイグレーションファイルに ``create unique_index(:users, [:username])`` とあり、重複するユーザーネームを登録しようとするとエラーになります。
+
+.. image:: /images/Phoenix_error2.jpg
+  :alt: Quicksilver
+
+このままだと画面にエラーが出てしまうので ``changeset`` で受け取れるように変更してみます。 ``user.ex`` を編集します。
+
+.. code-block:: Elixir
+  :linenos:
+
+  def changeset(model, params \\ %{}) do
+    model
+    |> cast(params, [:name, :username]) # 更新予定のパラメータカラムを第三引数でとる(?)
+    |> validate_required([:name, :username]) # このリストがcastが返すchangesetに存在するか検証
+    |> validate_length(:username, min: 1, max: 20)
+    |> unique_constraint(:username)
+  end
+
+``unique_constraint`` を最後のパイプラインに追加することで ``:username`` がかぶっていればエラーにしてくれます。
+
+この調子で外部キー制約もエラーハンドリングできるようにします。 ``video.ex`` を以下のように変更します。
+色々やった結果元の部分も間違っていたので修正してます。
+
+.. code-block:: Elixir
+  :linenos:
+
+  def changeset(struct, params \\ %{}) do
+    struct
+    |> cast(params, [:url, :title, :description, :category_id])
+    |> validate_required([:url, :title, :description])
+    |> assoc_constraint(:category)
+  end
+
+``validate_required`` の第三引数には何がはいるのだろうか・・・と思いましたが、 `公式ドキュメント <https://hexdocs.pm/ecto/Ecto.Changeset.html#content>`_ に書いてありました。 ``:message`` を取り、エラーメッセージをカスタマイズできるっぽいです。
+
+これで外部制約も確かめることが出来ます。
+
+.. code-block:: Elixir
+  :linenos:
+
+  iex(1)> alias Rumbl.Repo
+  iex(2)> alias Rumbl.Video
+  iex(3)> alias Rumbl.Category
+  iex(4)> import Ecto.Query
+  iex(5)>  video = Repo.one(from v in Video, limit: 1)
+  iex(6)> changeset = Video.changeset(video, %{category_id: 12345})
+  iex(7)> Repo.update changeset
+  [debug] QUERY OK db=0.0ms
+  begin []
+  [debug] QUERY ERROR db=46.0ms
+  UPDATE "videos" SET "category_id" = $1, "updated_at" = $2 WHERE "id" = $3 [12345, {{2017, 1, 23}, {15, 2, 49, 366000}}, 1]
+  [debug] QUERY OK db=0.0ms
+  rollback []
+  {:error,
+   #Ecto.Changeset<action: :update, changes: %{category_id: 12345},
+    errors: [category: {"does not exist", []}], data: #Rumbl.Video<>,
+    valid?: false>}
+
+良さそうです。
