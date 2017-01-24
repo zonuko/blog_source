@@ -210,7 +210,7 @@ QueryのAPIについて
 
 これで外部制約も確かめることが出来ます。
 
-.. code-block:: Elixir
+.. code-block:: shell
   :linenos:
 
   iex(1)> alias Rumbl.Repo
@@ -232,3 +232,57 @@ QueryのAPIについて
     valid?: false>}
 
 良さそうです。
+
+また、削除するときには ``foreign_key_constraint`` 関数が使えます。これを使うとカテゴリが削除出来ない理由をユーザに示す事ができます。
+
+.. code-block:: shell
+  :linenos:
+
+  iex> alias Rumbl.Repo
+  iex> alias Rumbl.Category
+  iex> alias Rumbl.Video
+  iex> import Ecto.Query
+  iex> import Ecto.Changeset
+  iex> category = Repo.get_by Category, name: "Drama"
+  iex> changeset = Ecto.Changeset.change(category)
+  iex> changeset = foreign_key_constraint(changeset, :videos, name: :videos_category_id_fkey, message: "still exist")
+  iex> Repo.delete changeset
+  [debug] QUERY ERROR db=312.0ms
+  DELETE FROM "categories" WHERE "id" = $1 [6]
+  {:error,
+   #Ecto.Changeset<action: :delete, changes: %{},
+    errors: [videos: {"still exist", []}], data: #Rumbl.Category<>,
+    valid?: false>}
+  
+``video`` のデータの中に既に ``Drama`` カテゴリーのIDを参照しているものがあれば設定したエラーを出してくれます。ちなみにどっかで書いたかもしれませんが ``Ecto.Changeset.change`` 関数は構造体とかからチェンジセット作ってくれる関数です。 ``cast`` やバリデーションを使いたくない時に使えるみたいです。（ `参考 <https://hexdocs.pm/ecto/Ecto.Changeset.html#change/2>`_ ）
+
+もう一つの選択肢として、マイグレーション時に参照先が削除された時どうするかの設定が書けるみたいです。前に作った ``add_category_id_to_video`` を見てみます。
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.Repo.Migrations.AddCategoryIdToVideo do
+    use Ecto.Migration
+  
+    def change do
+      alter table(:videos) do
+        add :category_id, references(:categories)
+      end
+    end
+  end
+ 
+``add :category_id, references(:categories)`` の部分が肝です。 ``references(:categories)`` には ``:on_delete`` オプションが付けられるようです。
+
+- ``:nothing`` ：デフォルト値。何もしない
+- ``:delete_all`` ：関連するものも一緒に削除する
+- ``:nilify_all`` ：関連するものが削除されたとき ``NULL`` にする
+
+
+============================
+まとめ
+============================
+
+- ``Query`` のAPIを使うことでデータベースへの柔軟な問合せができる。
+- ``*_constraints`` を使うことで各制約のバリデーションを使える。
+
+書籍の中には頻繁にデータベースでやることはデータベースの中でやるべきだとありました。また、全部に ``*_constraints`` 付けるのではなくクラッシュすべきところはクラッシュすべきとも書いてありました。ココらへんはElixirのLet's Crashの思想から来ているのかと思います。ユーザ側がどうにか出来る制約エラーの場合はカスタムエラーメッセージを出すと良いらしいです。（また英語力が・・・）
