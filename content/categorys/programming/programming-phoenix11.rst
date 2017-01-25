@@ -29,20 +29,6 @@ Programming Phoenix勉強その11
 
 
   defmodule Rumbl.ConnCase do
-    @moduledoc """
-    This module defines the test case to be used by
-    tests that require setting up a connection.
-  
-    Such tests rely on `Phoenix.ConnTest` and also
-    import other functionality to make it easier
-    to build and query models.
-  
-    Finally, if the test case interacts with the database,
-    it cannot be async. For this reason, every test runs
-    inside a transaction which is reset at the beginning
-    of the test unless the test case is marked as async.
-    """
-  
     use ExUnit.CaseTemplate
   
     using do
@@ -75,7 +61,90 @@ Programming Phoenix勉強その11
 
 | ``using`` ブロックは対して違いが無いですが、 ``setup`` ブロックは大分違います。 `Ectoのドキュメント <https://hexdocs.pm/ecto/Ecto.Adapters.SQL.Sandbox.html>`_ を見て探ってみます。 
 | ``Ecto.Adapters.SQL.Sandbox.checkout(Rumbl.Repo)`` では与えられたリポジトリに対してコネクションを取りに行っているようです。
-| 次の ``Ecto.Adapters.SQL.Sandbox.mode(Rumbl.Repo, {:shared, self()})`` は接続の共有方法を指定しているようです。非同期としてテストを行う場合は各テストケースで非同期にコネクションを使えるように明示しなくてならないようです。同期的にテストを行う場合はこちらのようです。（ ``allow/3`` 関数を使った非同期の方も書いてありましたが割愛します。）
+| 次の ``Ecto.Adapters.SQL.Sandbox.mode(Rumbl.Repo, {:shared, self()})`` は接続の共有方法を指定しているようです。同期的にテストを行う場合はこちらのようです。（ ``allow/3`` 関数を使った非同期の方も書いてありましたが割愛します。）
 | また、これは ``checkout`` された接続と同じ接続を使うようなので ``checkout`` の後に呼び出すのが必須なようです。
+| 接続に対して所有権の概念が導入されこのようになったようです。
 |
+| 
   
+============================================
+テストの実装
+============================================
+
+まずテストデータを作る関数を作ります。 ``test/support/test_helpers.ex`` を作ります。
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.TestHelpers do
+    alias Rumbl.Repo
+  
+    def insert_user(attrs \\ %{}) do
+      # Dictをマージする キーが被っている時は第二引数のものが優先される
+      changes = Dict.merge(%{
+        name: "Some User",
+        username: "user#{Base.encode16(:crypt.rand_bytes(8))}",
+        password: "supersecret",
+      }, attrs)
+  
+      %Rumbl.User{}
+      |> Rumbl.User.registration_changeset(changes)
+      |> Repo.insert!()
+    end
+  
+    def insert_video(user, attrs \\ %{}) do
+      user
+      |> Ecto.build_assoc(:video, attrs)
+      |> Repo.insert!()
+    end
+  end
+
+作った関数を各テストで使えるように ``import`` します。
+
+.. code-block:: Elixir
+  :linenos:
+
+  using do
+    quote do
+      # Import conveniences for testing with connections
+      use Phoenix.ConnTest
+
+      alias Rumbl.Repo
+      import Ecto
+      import Ecto.Changeset
+      import Ecto.Query
+
+      import Rumbl.Router.Helpers
+      # 自分で実装したヘルパー関数を各テストで使えるようにする
+      import Rumbl.TestHelpers
+
+      # The default endpoint for testing
+      @endpoint Rumbl.Endpoint
+    end
+  end
+
+最後に ``video_controller_test.exs`` を作ります。
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.VideoControllerTest do
+    use Rumbl.ConnCase
+  
+    test "requires user authentication on all actions", %{conn: conn} do
+      Enum.each([
+        get(conn, video_path(conn, :new)),
+        get(conn, video_path(conn, :index)),
+        get(conn, video_path(conn, :show, "123")),
+        get(conn, video_path(conn, :edit, "123")),
+        put(conn, video_path(conn, :update, "123", %{})),
+        post(conn, video_path(conn, :create, %{})),
+        delete(conn, video_path(conn, :delete, "123")),
+      ], fn conn ->
+        assert html_response(conn, 302) # ユーザ認証が必要なので全部設定されたパスにリダイレクトされる
+        assert conn.halted # 認証が行われていないのでhaltedはtrueになる
+      end)
+    end
+  end
+
+ユーザ認証が行われていない時にちゃんとリダイレクトされて ``halted`` が ``true`` になっているかテストをしています。このテストは ``mix test`` で実行した時にパスするはずです。
