@@ -68,7 +68,7 @@ Programming Phoenix勉強その11
 | 
   
 ============================================
-テストの実装
+ログアウト時のテストの実装
 ============================================
 
 まずテストデータを作る関数を作ります。 ``test/support/test_helpers.ex`` を作ります。
@@ -81,11 +81,11 @@ Programming Phoenix勉強その11
   
     def insert_user(attrs \\ %{}) do
       # Dictをマージする キーが被っている時は第二引数のものが優先される
-      changes = Dict.merge(%{
+      changes = Enum.into(attrs, %{
         name: "Some User",
-        username: "user#{Base.encode16(:crypt.rand_bytes(8))}",
+        username: "user#{Base.encode16(:crypto.rand_bytes(8))}",
         password: "supersecret",
-      }, attrs)
+      })
   
       %Rumbl.User{}
       |> Rumbl.User.registration_changeset(changes)
@@ -94,10 +94,12 @@ Programming Phoenix勉強その11
   
     def insert_video(user, attrs \\ %{}) do
       user
-      |> Ecto.build_assoc(:video, attrs)
+      |> Ecto.build_assoc(:videos, attrs)
       |> Repo.insert!()
     end
   end
+
+新しい目のElixirだと ``Dict`` がdeprecatedと怒られるので ``Enum.into`` に変えてます。第一引数の ``Enumerable`` を第二引数の ``Collectable`` のものに合体します。パイプでやろうかと思いましたが逆に見にくくなりそうだったのでやめました。
 
 作った関数を各テストで使えるように ``import`` します。
 
@@ -148,3 +150,33 @@ Programming Phoenix勉強その11
   end
 
 ユーザ認証が行われていない時にちゃんとリダイレクトされて ``halted`` が ``true`` になっているかテストをしています。このテストは ``mix test`` で実行した時にパスするはずです。
+
+
+============================================
+ログイン時のテストの実装
+============================================
+
+ログアウトときたらログインということで実装してみます。
+
+まずテスト時にログインしてないと話にならないのでそこら辺からやっていきます。 ``auth.ex`` の ``call/2`` 関数を変更します。
+
+.. code-block:: Elixir
+  :linenos:
+
+  def call(conn, repo) do
+    user_id = get_session(conn, :user_id)
+    cond do
+      user = conn.assigns[:current_user] ->
+        conn
+      user = user_id && repo.get(Rumbl.User, user_id) ->
+        # assignでconnを変更する(importされた関数)
+        # これによって:current_userがコントローラやビューで使えるようになる
+        assign(conn, :current_user, user)
+      true ->
+        assign(conn, :current_user, nil)
+    end
+  end
+
+``cond`` で場合分けをしていて、カレントユーザがすでに入ればそのまま ``conn`` を返します。これで ``:current_user`` を突っ込んだ後にこいつを呼び出せばそのまま処理に移れるはずです。
+
+次に ``video_controller_test.exs`` に以下を追加します。
