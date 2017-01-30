@@ -1,7 +1,7 @@
 Programming Phoenix勉強その13
 ################################
 
-:date: 2017-01-31 18:00
+:date: 2017-01-30 23:30
 :tags: Elixir,Phoenix
 :slug: programming-phoenix13
 :related_posts: programming-phoenix12
