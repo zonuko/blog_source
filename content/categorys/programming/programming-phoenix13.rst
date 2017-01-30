@@ -132,8 +132,184 @@ Programming Phoenix勉強その13
 
 - ビルドツールは ``brunch`` がデフォルト
 - ``brunch`` の設定はデフォルトでES6になっている
+- ``brunch`` を使わないように変えることも可能。プロジェクト作成時に ``--no-brunch`` オプションを与えると最初から除ける。
 - ``web/static/js`` 以下にあるファイルをすべて ``app.js`` にまとめる
 - staticファイルの読み込みは ``static_path(@conn, "/js/app.js")`` で行う
 - モジュールシステムを利用しないライブラリは ``web/static/vendor`` に追加する
 
   - 公式ドキュメントによると ``bower`` で入れたものはこっちに配備されるっぽい？
+
+というわけでJavaScript周りを実装します。 ``static/js/player.js`` を以下の通り実装します。
+
+.. code-block:: JavaScript
+  :linenos:
+
+  let Player = {
+      player: null,
+  
+      init(domId, player, onReadby) {
+          window.onYouTubeIframeAPIReady = () => {
+              this.onIframeReady(domId, player, onReadby);
+          };
+          let youtubeScriptTag = document.createElement("script");
+          // APIの読み込み APIが読み込まれるとonYouTubeIframeAPIReady関数が自動で呼ばれる
+          youtubeScriptTag.src = "//www.youtube.com/iframe_api";
+          document.head.appendChild(youtubeScriptTag);
+      },
+  
+      onIframeReady(domId, playerId, onReady) {
+          this.player = new YT.Player(domId, {
+              height: "360",
+              width: "420",
+              videoId: playerId,
+              events: {
+                  "onReady": (event => onReady(event)),
+                  "onStateChange": (event => this.onPlayerStateChange(event))
+              }
+          });
+      },
+  
+      onPlayerStateChange(event) {},
+      getCurrentTime() { return Math.floor(this.player.getCurrentTime() * 1000); },
+      seekTo(millsec) { return this.player.seekTo(millsec / 1000); }
+  };
+  export default Player;
+
+YouTubeのAPIを読み込んでいます。本筋から外れてしまうので割愛します。文法がES2015形式なので昔のJavaScriptとはちょっと変わっています。
+
+ソースを作っただけでは読み込んでくれないので ``static/js/app.js`` を以下のように変更します。
+
+.. code-block:: JavaScript
+  :linenos:
+
+  ...
+  import Player from "./player";
+  let video = document.getElementById("video");
+  if(video) {
+      Player.init(video.id, video.getAttribute("data-player-id"), () => {
+          console.log("player ready!");
+      });
+  }
+
+``import`` 文もES2015の文法だったと記憶してます。これも特に言うことはありません。
+
+こんな感じで実装して実行したあと、 ``priv/static/js/app.js`` を見に行くとソースがまとめられていることがわかります。
+抜粋して載せてみます。
+
+.. code-block:: JavaScript
+  :linenos:
+
+  var Player = {
+      player: null,
+  
+      init: function init(domId, plyerId, onReadby) {
+          var _this = this;
+  
+          window.onYouTubeIframeAPIReady = function () {
+              _this.onIframeReady(domId, playerId, onReadby);
+          };
+          var youtubeScriptTag = document.createElement("script");
+          // APIの読み込み APIが読み込まれるとonYouTubeIframeAPIReady関数が自動で呼ばれる
+          youtubeScriptTag.src = "//www.youtube.com/iframe_api";
+          document.head.appendChild(youtubeScriptTag);
+      },
+      onIframeReady: function onIframeReady(domId, playerId, _onReady) {
+          var _this2 = this;
+  
+          this.player = new YT.Player(domId, {
+              height: "360",
+              width: "420",
+              videoId: playerId,
+              events: {
+                  "onReady": function onReady(event) {
+                      return _onReady(event);
+                  },
+                  "onStateChange": function onStateChange(event) {
+                      return _this2.onPlayerStateChange(event);
+                  }
+              }
+          });
+      },
+      onPlayerStateChange: function onPlayerStateChange(event) {},
+      getCurrentTime: function getCurrentTime() {
+          return Math.floor(this.player.getCurrentTime() * 1000);
+      },
+      seekTo: function seekTo(millsec) {
+          return this.player.seekTo(millsec / 1000);
+      }
+  };
+  exports.default = Player;
+  });
+
+============================================
+スラッグの追加
+============================================
+
+各ビデオを任意のURLでアクセス出来るように ``Slug`` を付けます。
+
+``mix ecto.gen.migration add_slug_to_video`` を実行後以下のようにマイグレーションファイルを変更します。
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.Repo.Migrations.AddSlugToVideo do
+    use Ecto.Migration
+  
+    def change do
+      alter table(:videos) do
+        add :slug, :string
+      end
+    end
+  end
+
+出来たらマイグレーションを実行後、 ``video.ex`` で新たに追加された ``slug`` カラムを使うようにします。
+
+.. code-block:: Elixir
+  :linenos:
+
+
+  defmodule Rumbl.Video do
+    use Rumbl.Web, :model
+  
+    schema "videos" do
+      field :url, :string
+      field :title, :string
+      field :description, :string
+      field :slug, :string # 追加
+      belongs_to :user, Rumbl.User
+  
+      belongs_to :category, Rumbl.Category
+  
+      timestamps()
+    end
+  
+    @doc """
+    Builds a changeset based on the `struct` and `params`.
+    """
+    def changeset(struct, params \\ %{}) do
+      struct
+      |> cast(params, [:url, :title, :description, :category_id])
+      |> validate_required([:url, :title, :description])
+      |> slugify_title() # タイトルをSlugに変換
+      |> assoc_constraint(:category)
+    end
+  
+    defp slugify_title(changeset) do
+      # タイトルからSlugを作成する
+      # changesetを弄るだけで変更予定データの追加などが出来ている
+      if title = get_change(changeset, :title) do
+        put_change(changeset, :slug, slugify(title))
+      else
+        changeset
+      end
+    end
+  
+    defp slugify(str) do
+      str
+      |> Sgring.downcase()
+      |> String.replace(~r/[^\w-]+/u, "-")
+    end
+  end
+
+``get_change`` や ``put_change`` などを使うことで、変更が ``changeset`` の中だけで収まってくれています。
+
