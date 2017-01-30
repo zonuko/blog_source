@@ -130,9 +130,9 @@ Programming Phoenix勉強その13
 
 最初にPhoenixでのJavaScriptのビルド周りについて触れられています。
 
-- ビルドツールは ``brunch`` がデフォルト
-- ``brunch`` の設定はデフォルトでES6になっている
-- ``brunch`` を使わないように変えることも可能。プロジェクト作成時に ``--no-brunch`` オプションを与えると最初から除ける。
+- ビルドツールは ``Brunch`` がデフォルト
+- ``Brunch`` の設定はデフォルトでES6になっている
+- ``Brunch`` を使わないように変えることも可能。プロジェクト作成時に ``--no-Brunch`` オプションを与えると最初から除ける。
 - ``web/static/js`` 以下にあるファイルをすべて ``app.js`` にまとめる
 - staticファイルの読み込みは ``static_path(@conn, "/js/app.js")`` で行う
 - モジュールシステムを利用しないライブラリは ``web/static/vendor`` に追加する
@@ -306,10 +306,19 @@ YouTubeのAPIを読み込んでいます。本筋から外れてしまうので�
   
     defp slugify(str) do
       str
-      |> Sgring.downcase()
+      |> String.downcase()
       |> String.replace(~r/[^\w-]+/u, "-")
     end
   end
 
 ``get_change`` や ``put_change`` などを使うことで、変更が ``changeset`` の中だけで収まってくれています。
 
+============================================
+まとめ
+============================================
+
+- ``JavaScript`` のビルドツールのデフォルトは ``Brunch``
+- ``JavaScript`` の書式はデフォルトでES2015(ES6)形式
+- static系統のファイルは ``web/static/*`` に色々おいていくとよしなにしてくれる
+
+全体的にクライアントサイドって感じでした。
