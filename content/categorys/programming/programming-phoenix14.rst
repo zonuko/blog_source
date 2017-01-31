@@ -1,7 +1,7 @@
 Programming Phoenix勉強その14
 ################################
 
-:date: 2017-02-01 18:00
+:date: 2017-01-31 22:00
 :tags: Elixir,Phoenix
 :slug: programming-phoenix14
 :related_posts: programming-phoenix13
@@ -56,6 +56,7 @@ URI構造体を使ってちょっと遊んでみます。
 
 .. code-block:: shell
   :linenos:
+
   iex> url = Rumbl.Endpoint.struct_url
   %URI{authority: nil, fragment: nil, host: "localhost", path: nil, port: 4000,
    query: nil, scheme: "http", userinfo: nil}
