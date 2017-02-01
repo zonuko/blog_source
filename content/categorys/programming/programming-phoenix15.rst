@@ -100,3 +100,75 @@ socket.jsの変更
   export default socket
 
 余計な部分を消してしまって問題ないです。ログをコンソールに出すように変更しただけです。
+
+``Phoenix`` 側でのソケットのエンドポイントは ``endpoint.ex`` に記述されています。
+
+.. code-block:: Elixir
+  :linenos:
+
+  socket "/socket", Rumbl.UserSocket
+
+============================================
+サーバーサイドの実装
+============================================
+
+``Rumbl.UserSocket`` がエントリポイントになっていることがわかったので中身を見てみます。
+``channel/user_socket.ex`` です。
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.UserSocket do
+    use Phoenix.Socket
+  
+    transport :websocket, Phoenix.Transports.WebSocket
+    # transport :longpoll, Phoenix.Transports.LongPoll
+
+    def connect(_params, socket) do
+      {:ok, socket}
+    end
+  
+    def id(_socket), do: nil
+  end
+
+余計なコメントは消してます。
+
+- ``transport`` のところをコメントと合わせて見るとわかるように、二種類サポートされているようです。
+  通常の ``websocket`` と ``longpoll`` のロングポーリングです。
+  これは接続方法が抽象化され、他の部分の処理は同じで良いということです。
+- ``connect/2`` 関数はユーザの接続制御に用いられる。現在は全てのユーザが接続可能。認証は後で追加するらしい。
+- ``id/1`` 関数はソケットの識別を行っています。 ``nil`` なので全ユーザが匿名です。
+
+実際に実装していきます。まず ``user_socket.ex`` に以下を追加します。
+
+.. code-block:: Elixir
+  :linenos:
+
+  ## Channels
+  channel "videos:*", Rumble.VideoChannel
+
+``Phoenix`` ではトピックはリソース名（ ``:videos`` とか）でサブトピックは付随するIDになるようです。
+
+上記に書いた通り、 ``VideoChannel`` にディスパッチしているのでこれを実装していきます。
+``channels/video_channel.ex`` を実装します。
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumble.VideoChannel do
+    use Rumbl.Web, :channel
+  
+    def join("videos:" <> video_id, _params, socket) do
+      {:ok, assign(socket, :video_id, String.to_integer(video_id))}
+    end
+  end
+
+``join/3`` コールバック関数を作りました。（コールバックという呼び方はOTPに習っているようです。）
+
+引数に与えられている ``socket`` は接続されている間状態を保持します。
+なので、 ``assign`` などでデータを追加するとそれもずっと保持されて参照可能です。
+
+クライアント側でも ``join`` 出来るようにします。
+
+.. code-block:: JavaScript
+  :linenos:
