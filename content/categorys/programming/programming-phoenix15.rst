@@ -145,7 +145,7 @@ socket.jsの変更
   :linenos:
 
   ## Channels
-  channel "videos:*", Rumble.VideoChannel
+  channel "videos:*", Rumbl.VideoChannel
 
 ``Phoenix`` ではトピックはリソース名（ ``:videos`` とか）でサブトピックは付随するIDになるようです。
 
@@ -155,7 +155,7 @@ socket.jsの変更
 .. code-block:: Elixir
   :linenos:
 
-  defmodule Rumble.VideoChannel do
+  defmodule Rumbl.VideoChannel do
     use Rumbl.Web, :channel
   
     def join("videos:" <> video_id, _params, socket) do
@@ -168,7 +168,64 @@ socket.jsの変更
 引数に与えられている ``socket`` は接続されている間状態を保持します。
 なので、 ``assign`` などでデータを追加するとそれもずっと保持されて参照可能です。
 
-クライアント側でも ``join`` 出来るようにします。
+クライアント側でも ``join`` 出来るようにします。 ``video.js`` を変更します。
 
 .. code-block:: JavaScript
   :linenos:
+
+  onReady(videoId, socket) {
+        let msgContainer = document.getElementById("msg-container");
+        let msgInput = document.getElementById("msg-input");
+        let postButton = document.getElementById("msg-submit");
+        // トピックの識別
+        let vidChannel = socket.channel("videos:" + videoId);
+        // チャンネルへのjoin receiveで帰ってきたものを受け取る(OTPっぽい)
+        vidChannel.join()
+            .receive("ok", resp => console.log("joined the video channel", resp))
+            .receive("error", reason => console.log("join failed", reason));
+    }
+
+抜粋しました。クライアントサイドでサーバーサイドの関数呼んでるような見た目です。
+また、 ``receive`` はOTPでよく出てくるメッセージを受信するやつと同じっぽい感じで使っているみたいです。
+
+次に、試しに5秒毎にクライアントに通知を投げる処理を追加してみます。
+``video_channel.ex`` を以下のように実装します。
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.VideoChannel do
+    use Rumbl.Web, :channel
+  
+    def join("videos:" <> video_id, _params, socket) do
+      # 5秒ごとにクライアントにメッセージを送る
+      # send_interval/2関数は最終的にはsend_interval(Time, self(), Message)という形で呼び出される
+      :timer.send_interval(5_000, :ping)
+      # socket.assignsにvideo_idを保存
+      {:ok, assign(socket, :video_id, String.to_integer(video_id))}
+    end
+  
+    # OTPのコールバックhandle_castやhandle_callの仲間
+    # castやcallで処理される以外のメッセージを処理するらしい
+    def handle_info(:ping, socket) do
+      count = socket.assigns[:count] || 1
+      push socket, "ping", %{count: count}
+  
+      {:noreply, assign(socket, :count, count + 1)}
+    end
+  end
+
+コメントに書いてあるように、 ``join`` されると5秒ごとに自分自身にメッセージを投げて ``handle_info`` コールバックで受け取っています。
+``handle_info`` では ``socket`` に追加された ``count`` をインクリメントしていっているだけです。
+``push`` されるとクライアント側に通知が行くようです。
+
+============================================
+リアルタイムアノテーションの実装
+============================================
+
+基本的なところはわかったので動画にリアルタイムコメントを付けられるようにします。
+ちなみに `ここ <http://www.weblio.jp/content/%E3%82%A2%E3%83%8E%E3%83%86%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3>`_
+によるとYouTubeの動画へのコメントとかをアノテーションって呼ぶときもあるらしいですよ。
+
+
+``video.js`` を変更します。
