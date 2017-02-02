@@ -1,7 +1,7 @@
 Programming Phoenix勉強その15
 ################################
 
-:date: 2017-02-21 22:00
+:date: 2017-02-03 00:18
 :tags: Elixir,Phoenix
 :slug: programming-phoenix15
 :related_posts: programming-phoenix14
@@ -227,5 +227,182 @@ socket.jsの変更
 ちなみに `ここ <http://www.weblio.jp/content/%E3%82%A2%E3%83%8E%E3%83%86%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3>`_
 によるとYouTubeの動画へのコメントとかをアノテーションって呼ぶときもあるらしいですよ。
 
-
 ``video.js`` を変更します。
+
+.. code-block:: JavaScript
+  :linenos:
+
+  onReady(videoId, socket) {
+          let msgContainer = document.getElementById("msg-container");
+          let msgInput = document.getElementById("msg-input");
+          let postButton = document.getElementById("msg-submit");
+          // トピックの識別
+          let vidChannel = socket.channel("videos:" + videoId);
+  
+          postButton.addEventListener("click", e => {
+              let payload = { body: msgInput.value, at: Player.getCurrentTime() };
+              vidChannel.push("new_annotation", payload)
+                  .receive("error", e => console.log(e));
+              msgInput.value = "";
+          });
+  
+          // サーバーからのプッシュイベントを受け取るイベントハンドラを設定
+          vidChannel.on("new_annotation", (resp) => {
+              this.renderAnnotation(msgContainer, resp);
+          });
+  
+          // チャンネルへのjoin receiveで帰ってきたものを受け取る(OTPっぽい)
+          vidChannel.join()
+              .receive("ok", resp => console.log("joined the video channel", resp))
+              .receive("error", reason => console.log("join failed", reason));
+      },
+  
+      esc(str) {
+          let div = document.createElement("div");
+          div.appendChild(document.createTextNode(str));
+          return div.innerHTML;
+      },
+  
+      renderAnnotation(msgContainer, { user, body, at }) {
+          let template = document.createElement("div");
+  
+          template.innerHTML = `
+          <a href="#" data-seek="${this.esc(at)}">
+              <b>${this.esc(user.username)}</b>: ${this.esc(body)}
+          </a>
+          `;
+  
+          msgContainer.appendChild(template);
+          msgContainer.scrollTop = msgContainer.scrollHeight;
+      }
+  }
+
+サーバーからのプッシュイベントを受け取る用に設定したのと、受け取った物をレンダリングする関数を作成しました。
+また、 ``esc`` 関数でXSS対策を行っています。
+
+``count`` のやり取りからコメントのやり取りに変更したのでサーバー側も合わせて変更します。
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.VideoChannel do
+    use Rumbl.Web, :channel
+  
+    def join("videos:" <> video_id, _params, socket) do
+      {:ok, socket}
+    end
+  
+    # クライアントから直接送信された時に受け取るコールバック
+    def handle_in("new_annotation", params, socket) do
+      # 接続しているクライアント全てにブロードキャストする
+      # ユーザが任意のメッセージを送れないようにparamsを分解する
+      broadcast! socket, "new_annotation", %{
+        user: %{username: "anon"},
+        body: params["body"],
+        at: params["at"]
+      }
+  
+      {:reply, :ok, socket}
+    end
+  end
+
+``join`` 関数をもとに戻したのと ``handle_in/3`` 関数を新たに追加しました。
+``handle_in`` では ``Map.put`` とかでメッセージを作っていないのはセキュリティ対策のようです。
+メッセージはユーザから任意で入力されるので ``params`` をバラして好き勝手入れられない様にしています。
+
+============================================
+認証の追加
+============================================
+
+誰が送ったメッセージか知りたいので認証を行います。
+普通のアプリケーションはセッションでの認証が主ですが、 ``websocket`` では接続が長く続くため、
+トークン認証で行います。まずテンプレートにトークンを埋め込みます。
+
+.. code-block:: ERB
+  :linenos:
+
+  ...
+  </div> <!-- /container -->
+  <!-- websocket用ユーザトークンの埋め込み Rumbl.Authでの認証が通っていることが条件 -->
+  <script>window.userToken = "<%= assigns[:user_token] %>"</script>
+  <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+  ...
+
+``user_token`` を ``assign`` するように ``auth.ex`` を変更します。
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.Auth do
+    ...
+    def call(conn, repo) do
+      user_id = get_session(conn, :user_id)
+      cond do
+        user = conn.assigns[:current_user] ->
+          put_current_user(conn, user) # 変更
+        user = user_id && repo.get(Rumbl.User, user_id) ->
+          put_current_user(conn, user) # 変更
+        true ->
+          assign(conn, :current_user, nil)
+      end
+    end
+  
+    def login(conn, user) do
+      conn
+      |> put_current_user(user) # 変更
+      |> put_session(:user_id, user.id)
+      |> configure_session(renew: true) 
+    end
+    ...
+    # 追加
+    defp put_current_user(conn, user) do
+      # 第二引数はsalt
+      token = Phoenix.Token.sign(conn, "user socket", user.id)
+  
+      conn
+      |> assign(:current_user, user)
+      |> assign(:user_token, token) # トークンを突っ込んでapp.html.eexより使う
+    end
+  end
+
+特に不思議なところはなくて、 ``Phoenix.Token.sign`` を使ってトークンを作っているだけです。
+
+``user_socket.ex`` を変更してセッションに割り当てられた ``:user_token`` から ``user_id`` を判別し、
+``socket`` に割り当てるようにします。
+
+.. code-block:: Elixir
+  :linenos:
+
+  ...
+    # 2週間有効
+    @max_age 2 * 7 * 24 * 60 * 60
+  
+    def connect(%{"token" => token}, socket) do
+      # 第二引数はsalt
+      case Phoenix.Token.verify(socket, "user socket", token, max_age: @max_age) do
+        {:ok, user_id} ->
+          {:ok, assign(socket, :user_id, user_id)}
+        {:error, _reason} ->
+          :error
+      end
+    end
+  
+    def connect(_params, _socket), do: :error
+  
+    def id(socket), do: "user_socket:#{socket.assigns.user_id}"
+  end
+
+これも余り不思議なところはなくて、 ``Phoenix.Token.verify`` を使ってトークンから ``user_id`` を取っているだけです。
+これでログインしていなければコメントが投稿できなくなりました。
+
+============================
+まとめ
+============================
+
+- ``Channel`` はサーバーとクライアントの双方向リアルタイム通信を行う。
+- ``Channel`` はOTPの上に成り立っていて、コールバック関数などもそれに従っている。
+- ``Phoenix`` には最初からクライアント側の ``weboscket`` 用ライブラリも用意されている。
+- 接続が長期間続くため、認証はトークンを利用して行う。
+
+``websocket`` その1でした。今まで余りやったことがないことをしている感があって面白いです。
+次は投稿されたコメントの永続化からです。
