@@ -1,7 +1,7 @@
 Programming Phoenix勉強その17
 ################################
 
-:date: 2017-02-12 23:18
+:date: 2017-02-06 22:18
 :tags: Elixir,Phoenix
 :slug: programming-phoenix17
 :related_posts: programming-phoenix16
@@ -239,3 +239,12 @@ Agentについて
 見てわかるように ``Agent`` は状態の保持に特化したものです。実際には中身で ``GenServer`` が呼ばれるようです。
 
 このように ``GenServer`` 上の構成物になっているものの中の一つとして ``Phoenix.Channel`` があります。
+
+============================================
+まとめ
+============================================
+
+- プロセスを起動するには ``GenServer`` を使う。
+- プロセスの戦略は ``worker`` 自身の設定と ``children`` に対する ``supervisor`` の監視戦略で行う。
+- ``Agent`` は ``GenServer`` の状態管理特化の抽象化。 
+- ``Phoenix.Channel`` も ``Agent`` 同様に ``GenServer`` の抽象化。
