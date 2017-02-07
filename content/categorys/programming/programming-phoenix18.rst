@@ -104,3 +104,51 @@ Wolframを利用するアプリの構築
   config :rumbl, :wolfram, app_id: "XXXXXX-XXXXXXXXXX"
 
 最後に、元々の ``dev.exs`` に ``import_config "dev.secret.exs"`` を一行追加して準備完了です。
+
+準備が終わったので ``lib/rumbl/info_sys/wolfram.ex`` を実装します。
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.InfoSys.Wolfram do
+    import SweetXml
+    alias Rumbl.InfoSys.Result
+  
+    def start_link(query, query_ref, owner, limit) do
+      Task.start_link(__MODULE__, :fetch, [query, query_ref, owner, limit])
+    end
+  
+    def fetch(query_str, query_ref, owner, _limit) do
+      query_str
+      |> fetch_xml()
+      |> xpath(~x"/queryresult/pod[contains(@title, 'Result') or
+                                   contains(@title, 'Definitions')]
+                              /subpod/plaintext/text()")
+      |> send_result(query_ref, owner)
+    end
+  
+    defp send_result(nil, query_ref, owner) do
+      send(owner, {:results, query_ref, []})
+    end
+  
+    defp send_result(answer, query_ref, owner) do
+      results = [%Result{backend: "wolfram", score: 95, text: to_string(answer)}]
+      send(owner, {:results, query_ref, results})
+    end
+  
+    defp fetch_xml(query_str) do
+      {:ok, {_, _, body}} = :httpc.request(
+        String.to_char_list("http://api.wolframalpha.com/v2/query" <> "?appid=#{app_id()}" <>
+                                                                      "&input=#{URI.encode(query_str)}&format=plaintext"))
+    end
+  
+    defp app_id, do: Application.get_env(:rumbl, :wolfram)[:app_id]
+  end
+
+- ``Task.start_link` でプロセスを起動しています。 ``Task`` は ``Agent`` と異なり、状態の保存ではなく、バックグラウンドでの関数起動に特化した ``OTP`` です。
+- API呼び出しをしている部分は ``fetch_xml/1`` 関数です。 ``Erlang`` の ``:httpc`` を使ってリクエストを投げているみたいです。
+- API呼び出しの結果を解析するのは ``SweetXml`` に含まれている ``xpath`` 関数です。自分も余り理解していないですが、 `サンプル <https://github.com/awetzel/sweet_xml>`_ とか見るとなんとなくわかります。
+ 
+  - ``xml`` のエレメントの ``queryresult/pod`` の属性 ``title`` が ``Result`` か ``Definitions`` の物の ``/subpod/plaintext/`` の要素をテキストで取れという感じのようです。
+
+- 最後に ``send_result`` をパターンマッチによって呼び出します。呼び出し元の ``PID`` に結果を送り返します。
