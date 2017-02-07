@@ -148,7 +148,94 @@ Wolframを利用するアプリの構築
 - ``Task.start_link` でプロセスを起動しています。 ``Task`` は ``Agent`` と異なり、状態の保存ではなく、バックグラウンドでの関数起動に特化した ``OTP`` です。
 - API呼び出しをしている部分は ``fetch_xml/1`` 関数です。 ``Erlang`` の ``:httpc`` を使ってリクエストを投げているみたいです。
 - API呼び出しの結果を解析するのは ``SweetXml`` に含まれている ``xpath`` 関数です。自分も余り理解していないですが、 `サンプル <https://github.com/awetzel/sweet_xml>`_ とか見るとなんとなくわかります。
- 
-  - ``xml`` のエレメントの ``queryresult/pod`` の属性 ``title`` が ``Result`` か ``Definitions`` の物の ``/subpod/plaintext/`` の要素をテキストで取れという感じのようです。
-
+- ``xml`` のエレメントの ``queryresult/pod`` の属性 ``title`` が ``Result`` か ``Definitions`` の物の ``/subpod/plaintext/`` の要素をテキストで取れという感じのようです。
 - 最後に ``send_result`` をパターンマッチによって呼び出します。呼び出し元の ``PID`` に結果を送り返します。
+
+動きを試すには ``iex -S mix`` から以下のコマンドで確かめられます。
+
+.. code-block:: shell
+  :linenos:
+
+  iex> Rumbl.InfoSys.compute("what is elixir?")
+  [{#PID<0.566.0>, #Reference<0.0.3.1660>}]
+  iex> flush()
+  {:results, #Reference<0.0.3.1660>,
+   [%Rumbl.InfoSys.Result{backend: "wolfram", score: 95,
+     text: "1 | noun | a sweet flavored liquid (usually containing a small amount of
+   alcohol) used in compounding medicines to be taken by mouth in order to mask an u
+  npleasant taste\n2 | noun | hypothetical substance that the alchemists believed to
+   be capable of changing base metals into gold\n3 | noun | a substance believed to
+  cure all ills",
+     url: nil}]}
+  :ok
+
+良さそうですが、このままだとプロセスが死んだときも待ち続けてしまいます。
+また、機能強化としてスコア順での整列と、タイムアウト処理を入れる必要もあります。
+
+============================================
+InfoSysアプリの機能拡張
+============================================
+
+API問い合わせの結果の値の畳み込みとプロセスが死んだときの処理を追加します。
+``info_sys.ex`` を変更します。
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.InfoSys do
+    ...
+    def compute(query, opts \\ []) do
+      limit = opts[:limit] || 10
+      # 引数でバックエンドサービスが提示されてなければデフォルトを使う
+      backends = opts[:backends] || @backends
+  
+      # 各バックエンドサービスに関してプロセスを開始する
+      backends
+      |> Enum.map(&spawn_query(&1, query, limit))
+      |> await_results(opts)
+      |> Enum.sort(&(&1.score >= &2.score))
+      |> Enum.take(limit)
+    end
+  
+    defp spawn_query(backend, query, limit) do
+      query_ref = make_ref()
+      # 送り返される時に自分のPIDが必要なので第4引数はself()
+      opts = [backend, query, query_ref, self(), limit]
+      # 起動済みのSupervisorに自分自身のプロセスを子として監視してもらう
+      # これを呼び出すと自動でstart_linkが呼び出されてプロセス開始する
+      {:ok, pid} = Supervisor.start_child(Rumbl.InfoSys.Supervisor, opts)
+  
+      # プロセスの死活監視
+      monitor_ref = Process.monitor(pid)
+  
+      {pid, monitor_ref, query_ref}
+    end
+  
+    defp await_results(children, _opts) do
+      await_results(children, [], :infinity)
+    end
+  
+    defp await_results([head|tail], acc, timeout) do
+      {pid, monitor_ref, query_ref} = head
+  
+      # wolframなどでsendされた結果を待ち受けてパターンマッチする
+      receive do
+        {:results, ^query_ref, results} ->
+          Process.demonitor(monitor_ref, [:flush])
+          # 再帰でmapの結果を処理する
+          await_results(tail, results ++ acc, timeout)
+        {:DOWN, ^monitor_ref, :process, ^pid, _reason} ->
+          # モニタリングの結果失敗していた時
+          await_results(tail, acc, timeout)
+      end
+    end
+  
+    defp await_results([], acc, _) do
+      # 最終的には結果を合体したものを返す
+      acc
+    end
+  end
+
+``await_results`` 関数の再帰によって ``receive`` 結果の畳み込みを実装しました。
+また、 ``Process.monitor`` によってプロセスの監視を追加しています。
+プロセスが死んでいた場合は ``receive`` のパターンマッチによって正しく処理することができるようになりました。
