@@ -192,7 +192,7 @@ API問い合わせの結果の値の畳み込みとプロセスが死んだと�
       # 各バックエンドサービスに関してプロセスを開始する
       backends
       |> Enum.map(&spawn_query(&1, query, limit))
-      |> await_results(opts)
+      |> await_result(opts)
       |> Enum.sort(&(&1.score >= &2.score))
       |> Enum.take(limit)
     end
@@ -211,11 +211,11 @@ API問い合わせの結果の値の畳み込みとプロセスが死んだと�
       {pid, monitor_ref, query_ref}
     end
   
-    defp await_results(children, _opts) do
-      await_results(children, [], :infinity)
+    defp await_result(children, _opts) do
+      await_result(children, [], :infinity)
     end
   
-    defp await_results([head|tail], acc, timeout) do
+    defp await_result([head|tail], acc, timeout) do
       {pid, monitor_ref, query_ref} = head
   
       # wolframなどでsendされた結果を待ち受けてパターンマッチする
@@ -223,19 +223,92 @@ API問い合わせの結果の値の畳み込みとプロセスが死んだと�
         {:results, ^query_ref, results} ->
           Process.demonitor(monitor_ref, [:flush])
           # 再帰でmapの結果を処理する
-          await_results(tail, results ++ acc, timeout)
+          await_result(tail, results ++ acc, timeout)
         {:DOWN, ^monitor_ref, :process, ^pid, _reason} ->
           # モニタリングの結果失敗していた時
-          await_results(tail, acc, timeout)
+          await_result(tail, acc, timeout)
       end
     end
   
-    defp await_results([], acc, _) do
+    defp await_result([], acc, _) do
       # 最終的には結果を合体したものを返す
       acc
     end
   end
 
-``await_results`` 関数の再帰によって ``receive`` 結果の畳み込みを実装しました。
+``await_result`` 関数の再帰によって ``receive`` 結果の畳み込みを実装しました。
 また、 ``Process.monitor`` によってプロセスの監視を追加しています。
 プロセスが死んでいた場合は ``receive`` のパターンマッチによって正しく処理することができるようになりました。
+
+============================================
+タイムアウトの追加
+============================================
+
+タイムアウトを追加しますが、 ``receive`` と ``after`` を使ってしまうとブロッキングが発生してしまいます。
+3つシステムがあって5秒ずつタイムアウトすると15秒待つことになります。
+これを避けるために違う方法を使います。 ``await_result`` 関数を以下のように変更します。
+
+.. code-block:: Elixir
+  :linenos:
+
+  defmodule Rumbl.InfoSys do
+    ...
+    defp await_result(children, opts) do
+      timeout = opts[:timeout] || 5000
+      # 非同期で起動して決められた時間のあとメッセージを送信してくる
+      timer = Process.send_after(self(), :timedout, timeout)
+      results = await_result(children, [], :infinity)
+      # タイマー実験用
+      # :timer.sleep(5001)
+      cleanup(timer)
+      results
+    end
+  
+    defp await_result([head|tail], acc, timeout) do
+      {pid, monitor_ref, query_ref} = head
+  
+      # wolframなどでsendされた結果を待ち受けてパターンマッチする
+      # メッセージが来るまで待ち続ける
+      receive do
+        {:results, ^query_ref, results} ->
+          Process.demonitor(monitor_ref, [:flush])
+          # 再帰でmapの結果を処理する
+          await_result(tail, results ++ acc, timeout)
+        {:DOWN, ^monitor_ref, :process, ^pid, _reason} ->
+          # モニタリングの結果失敗していた時
+          await_result(tail, acc, timeout)
+        # Process.send_afterによって送られるメッセージ
+        :timedout ->
+          kill(pid, monitor_ref)
+          await_result(tail, acc, 0)
+      after
+        timeout ->
+          kill(pid, monitor_ref)
+          # ひたすらここにはいることになるのでタイムアウト後は何もせずに終わる
+          await_result(tail, acc, 0)
+      end
+    end
+  
+    defp await_result([], acc, _) do
+      # 最終的には結果を合体したものを返す
+      acc
+    end
+  
+    defp kill(pid, ref) do
+      Process.demonitor(ref, [:flush])
+      Process.exit(pid, :kill)
+    end
+  
+    defp cleanup(timer) do
+      :erlang.cancel_timer(timer)
+      receive do
+        # ここでもタイムアウトメッセージが来る可能性があるため？
+        :timedout -> :ok
+      after
+        0 -> :ok
+      end
+    end
+  end
+
+``Process.send_after`` を使って非同期タイムアウトを入れました。
+設定された秒数立つとメッセージが送信されるのでそれを待ち受けるようにしました。
