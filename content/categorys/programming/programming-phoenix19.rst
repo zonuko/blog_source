@@ -170,7 +170,6 @@ OTPのテスト
 
 今までのテストとそう変わったところは無いかと思います。
 
-
 ============================================
 Wolfram APIの分離
 ============================================
@@ -254,17 +253,35 @@ Wolfram APIの分離
 
 .. code-block:: Elixir
   :linenos:
-
+  
   defmodule InfoSys.Backends.WolframTest do
     use ExUnit.Case, async: true
     alias InfoSys.Wolfram
   
     test "makes request, reports results, them terminates" do
       ref = make_ref()
-      {:ok, _} = Wolfram.start_link("1 + 1", ref, self(), 1)
+      {:ok, pid} = Wolfram.start_link("1 + 1", ref, self(), 1)
+      Process.monitor(pid)
   
       assert_receive {:results, ^ref, [%InfoSys.Result{text: "2"}]}
+      assert_receive {:DOWN, _ref, :process, ^pid, :normal}
+    end
+  
+    test "no query results reports an empty list" do
+      ref = make_ref()
+      {:ok, _} = Wolfram.start_link("none", ref, self(), 1)
+  
+      assert_receive {:results, ^ref, []}
     end
   end
 
 これで基本的なテストはOKです。
+
+============================================
+まとめ
+============================================
+
+- ``umbrella`` プロジェクトを使うことでAPI同士の結合を弱めて、テストがやりやすくなる。
+- テストをする際はスタブとなるような構造体などを作ってやると良い
+
+
