@@ -9,6 +9,12 @@ Programming Phoenix勉強その1
 | 買ってあったけど読んでなかったので読みます.プログラミングElixirは原著の方も翻訳の方も一応読んでます.
 | プログラミングElixirについては色々なところで書評なり見る気がするけど,こっちの方は余り見ない気がします.
 |
+
+.. raw:: html
+  
+  <div class="amazlet-box" style="margin-bottom:0px;"><div class="amazlet-image" style="float:left;margin:0px 12px 1px 0px;"><a href="http://www.amazon.co.jp/exec/obidos/ASIN/1680501453/zonuko-22/ref=nosim/" name="amazletlink" target="_blank"><img src="https://images-fe.ssl-images-amazon.com/images/I/41pPn50VnvL._SL160_.jpg" alt="Programming Phoenix: Productive, Reliable, Fast" style="border: none;" /></a></div><div class="amazlet-info" style="line-height:120%; margin-bottom: 10px"><div class="amazlet-name" style="margin-bottom:10px;line-height:120%"><a href="http://www.amazon.co.jp/exec/obidos/ASIN/1680501453/zonuko-22/ref=nosim/" name="amazletlink" target="_blank">Programming Phoenix: Productive, Reliable, Fast</a><div class="amazlet-powered-date" style="font-size:80%;margin-top:5px;line-height:120%">posted with <a href="http://www.amazlet.com/" title="amazlet" target="_blank">amazlet</a> at 17.04.16</div></div><div class="amazlet-detail">Chris Mccord Bruce Tate Jose Valim <br />Pragmatic Bookshelf <br />売り上げランキング: 3,667<br /></div><div class="amazlet-sub-info" style="float: left;"><div class="amazlet-link" style="margin-top: 5px"><a href="http://www.amazon.co.jp/exec/obidos/ASIN/1680501453/zonuko-22/ref=nosim/" name="amazletlink" target="_blank">Amazon.co.jpで詳細を見る</a></div></div></div><div class="amazlet-footer" style="clear: left"></div></div>
+   
+|
 | ちなみに実際にコードを書くPart1のChapter2からやってきます.
 | あとPhoenix自体は何回か触ってます.趣味で.
 |
