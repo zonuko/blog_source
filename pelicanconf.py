@@ -13,7 +13,7 @@ PATH = 'content/categorys'
 # Favicon Settings
 FAVICON = 'favicon.ico'
 FAVICON_TYPE = 'image/vnd.microsoft.icon'
-STATIC_PATHS = ['images', 'pdfs', 'extra']
+STATIC_PATHS = ['images', 'pdfs', 'extra', 'extra/youtube.css']
 EXTRA_PATH_METADATA = {
     'extra/' + FAVICON: {'path': FAVICON},
 }
@@ -48,6 +48,11 @@ ADDTHIS_GOOGLE_PLUSONE = False
 ADDTHIS_DATA_TRACK_ADDRESSBAR = True
 ADDTHIS_PROFILE  = "ra-58ea037a1776945e"
 # BOOTSTRAP_FLUID = True
+# カスタムCSS関係
+CUSTOM_CSS = 'static/youtube.css'
+EXTRA_PATH_METADATA = {
+    'extra/youtube.css': {'path': 'static/youtube.css'}
+}
 
 SITEMAP = {
     'format': 'xml'
