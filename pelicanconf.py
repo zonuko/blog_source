@@ -13,7 +13,7 @@ PATH = 'content/categorys'
 # Favicon Settings
 FAVICON = 'favicon.ico'
 FAVICON_TYPE = 'image/vnd.microsoft.icon'
-STATIC_PATHS = ['images', 'pdfs', 'extra', 'extra/youtube.css']
+STATIC_PATHS = ['images', 'pdfs', 'extra','extra/robots.txt', 'extra/youtube.css']
 EXTRA_PATH_METADATA = {
     'extra/' + FAVICON: {'path': FAVICON},
 }
@@ -51,6 +51,7 @@ ADDTHIS_PROFILE  = "ra-58ea037a1776945e"
 # カスタムCSS関係
 CUSTOM_CSS = 'static/youtube.css'
 EXTRA_PATH_METADATA = {
+    'extra/robots.txt': {'path': 'robots.txt'},
     'extra/youtube.css': {'path': 'static/youtube.css'}
 }
 
