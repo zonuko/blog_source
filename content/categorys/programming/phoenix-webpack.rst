@@ -28,7 +28,7 @@ Phoenixのフロントエンドのツールをwebpackにするのに思いの外
 package.jsonの作成
 ============================================
 
-``npm init`` するかコピペして ``package.json`` を作ります。
+``package.json`` を書き換えます。
 
 また、 ``TypeScript`` と ``React.js`` で試したので以下のような感じになりました。
 ``dependencies`` とかは各自 ``npm install --save hoge`` とか ``npm install --save-dev hoge`` とかしてもらえればいいと思います。
