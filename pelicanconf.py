@@ -67,6 +67,7 @@ RELATED_POSTS_SKIP_SAME_CATEGORY = True
 SOCIAL = (
     ('github', 'https://github.com/zonuko'),
     ('bitbucket', 'https://bitbucket.org/y_fujiwara/'),
+    ('gitlab', 'https://gitlab.com/y-fujiwara'),
     ('twitter', 'https://twitter.com/nuhera'),
     ('twitter', 'https://twitter.com/zonuko'),
 )
