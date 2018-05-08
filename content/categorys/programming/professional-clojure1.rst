@@ -108,6 +108,60 @@ Programming Clojureとか読んでると今更な感もあるんですが、触�
   (def fib-seq
     (lazy-cat [1 1] (map + (rest fib-seq) fib-seq)))
 
+============================================
+変更可能な仲間
+============================================
+
+Atom
+============================================
+
+最もシンプルな変更可能な値。協調動作を行わない前提だったり、独立した値に使えるっぽいです。
+一度に複数変更しない場合にのみ使う感じです。
+
+.. code-block:: Clojure
+  :linenos:
+
+  ;; そのまま表示すると#atom[{} 0x755e4715]って感じでセットした値とハッシュ値のセットになる
+  (def app-state (atom {}))
+  ;; swap!で更新する。第二引数の関数をその後の引数を使って実行する
+  ;; #atom[{:current-user "Jeremy"} 0x755e4715]な感じ
+  (swap! app-state assoc :current-user "Jeremy")
+  ;; 直接上書き更新する場合はreset!
+  ;; #atom[{:aaa 1} 0x755e4715]
+  (reset! app-state {:aaa 1})
+  ;; derefか@で中身を取得
+  (:aaa @app-state)
+
+Ref
+============================================
+
+複数値の変更に使うやつです。いわゆるトランザクション。
+ここらへんプログラミングClojureにもあったんですが要復習。
+
+ ``atom`` との比較は割愛
+
+.. code-block:: Clojure
+  :linenos:
+
+  ;; refの定義方法はatomと似た感じ
+  (def checking (ref {:balance 500}))
+  ;; 協調動作実験用にもう一つ
+  (def savings (ref {:balance 250}))
+
+  ;; dosyncで協調動作
+  ;; throwされると最初のcommuteは巻き戻される
+  ;; 更新自体はalterも存在し、こっちは実行順が保証される
+  (dosync
+    (commute checking assoc :balance 700)
+    (throw (Exception. "Oops..."))
+    (commute savings assoc :balance 50))
+
+============================================
+Nil Punning
+============================================
+
+上手い翻訳が出てこない・・・
+
 
 
 ============================================
