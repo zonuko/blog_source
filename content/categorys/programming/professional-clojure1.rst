@@ -1,4 +1,4 @@
-Profession Clojureメモその 1
+Professional Clojureメモその1
 ################################
 
 :date: 2018-05-27 23:00
