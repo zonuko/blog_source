@@ -1,7 +1,7 @@
 Profession Clojureメモその 1
 ################################
 
-:date: 2018-05-05 23:00
+:date: 2018-05-27 23:00
 :tags: Clojure
 :slug: pro-clojure
 :summary: Profession Clojureを読む第1章
@@ -157,17 +157,131 @@ Ref
     (commute savings assoc :balance 50))
 
 ============================================
-Nil Punning
+Nilの扱い
 ============================================
 
-上手い翻訳が出てこない・・・
+Nil Punningって日本語にするとどういう感じなんだろう？上手い翻訳が出てこない・・・
 
-基本的にはClojureでのnilのあ使い方について書かれていました。
+.. code-block:: Clojure
+  :linenos:
 
+  ;; nilはfalsy
+  (if nil "true" "false")
 
+  ;; firstとかみたいに配列の類いを渡すこと前提にしているものはnil渡すとnilを返す
+  ;; 単純に想定されているものが来てないので最初の要素とかが無いので
+  (first nil) ;; => nil
+  (second nil) ;; => nil
+  (seq? nil) ;; => false
+
+  ;; 空のリストとかとはnilは違う
+  (if '() "true" "false") ;; => "true"
+
+  ;; falsyな値としてnilを扱っているのかnilとしてnilを使っているのか要注意
+  ;; 以下の例はmapを扱う場合にValueとしてnilがあるとKeyが存在しないときに帰ってくるnilを判別が出来ない例
+  (:foo {:foo nil :bar "baz"}) ;; => nil
+  (:fooo {:foo nil :bar "baz"}) ;; => nil
+  ;; mapはデフォルト値を指定できるのでKeyが無いときはそっちがいい
+  (:fooo {:foo nil :bar "baz"} :not-found) ;; => :not-found
+
+``(first 1)`` はなんでnilじゃないんだろう？
+
+============================================
+オブジェクト指向っぽいやつ
+============================================
+
+オーバーロードっぽいディスパッチは ``defmulti`` のマルチメソッドでできる
+
+.. code-block:: Clojure
+  :linenos:
+
+  ;; 第一引数に与えられた何某かで実際に呼び出されるメソッドが決まる
+  (defmulti area (fn [shape & _] shape))
+
+  ;; １つ目が:triangleの場合
+  (defmethod area :triangle
+    [_ base height]
+    (/ (* base height) 2))
+
+  ;; :sqareの場合
+  (defmethod area :square
+    [_ side]
+    (* side side))
+
+  ;; :rectの場合
+  (defmethod area :rect
+    [_length width]
+    (* length width))
+
+  ;; :circleの場合
+  (defmethod area :circle
+    [_ radius]
+    (* radius radius Math/PI))
+
+オーバーロードと違ってオブジェクトに紐づくようなメソッドではなく、
+特定の条件から実際の関数がディスパッチされる単なる関数群という感じでしょうか
+
+クラスっぽいやつ
+============================================
+
+``deftype`` とか ``defrecord`` でクラスが作れる。
+``defrecord`` の方は普通の連想配列のようにも振る舞える
+
+.. code-block:: Clojure
+  :linenos:
+
+  (deftype hogehoge [hoge])
+  (def h (hogehoge. 100))
+  (.hoge h) ;; => 100
+  (:hoge h) ;; => nil
+
+  (defrecord foo [bar])
+  (def f (foo. 100))
+  (.bar f) ;; => 100
+  (:bar f) ;; => 100
+
+インターフェースぽいやつ
+============================================
+
+``interface`` っぽいやつとして ``defprotocol`` が紹介されていました。
+
+.. code-block:: Clojure
+  :linenos:
+
+  (defprotocol Shape
+    (area [this])
+    (perimeter [this]))
+
+  (defrecord React [width length]
+    Shape ;; Shapeプロトコルを実装
+    (area [this] (* (:width this) (:length this)))
+    (perimeter [this] (+ (* 2 (:width this)) (* 2 (:length this)))))
+
+どちらかというとtraitとかに近いのかも？traitの方はちょっとかじった程度ですが。
+
+``defrecord`` や ``deftype`` したくないけど特定の ``Var`` になにか処理を付け加えたいとき用に `reify` があるっぽいです。
+
+.. code-block:: Clojure
+  :linenos:
+
+  ;; recordやtypeではない単なるVarにprotocolを実装させる
+  (def some-shape
+    (reify Shape
+      (area [this] "Area")
+      (perimeter [this] "I calculate perimeter")))
+
+============================================
+その他
+============================================
+
+データの永続性についてとかを木構造を作って紹介されてましたがブログでは割愛します。
+
+また、マクロの紹介として ``defroutes`` とかが紹介されていました。
+マクロ自体の説明ではなくて何が出来るかとかそういう話です。
 
 ============================================
 まとめ
 ============================================
 
 - ほとんど復習でしたが、 ``trampoline`` の使い方とか参考になりました。
+- ``honeysql`` とか紹介されてたのでそのうち使ってみたいです
